@@ -23,6 +23,12 @@ parser.add_argument('--using_vae', action='store_true')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# class ARGS:
+#     batch_size = 64
+#     img_size = 256
+#     num_epoch=16
+#     lr = 0.01
+#     using_vae = True
 
 if __name__=='__main__':
     ############
