@@ -120,7 +120,7 @@ if __name__=='__main__':
             elif args.vis_mode == 'wandb':
                 wandb.log({'result': [wandb.Image(i) for i in img]})
             else:
-                save_plt_img(img)
+                save_plt_img(img, title='result')
 
             l = lab[:1, 0].repeat(64, 1, 1, 1)
             z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
@@ -132,6 +132,6 @@ if __name__=='__main__':
             elif args.vis_mode == 'wandb':
                 wandb.log({'sample':[wandb.Image(i) for i in img]})
             else:
-                save_plt_img(img)
+                save_plt_img(img, title='sample')
 
         torch.save(model.state_dict(), os.path.join(args.param_path, args.exp_name+'_model.pt'))
