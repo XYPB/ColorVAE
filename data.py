@@ -14,8 +14,8 @@ std = np.array([27., 13., 18.], dtype=np.float32)
 
 class ColorTinyImageNet(torchvision.datasets.VisionDataset):
 
-    def __init__(self, root, transforms=None, split='train'):
-        super().__init__(root, transforms)
+    def __init__(self, root, split='train'):
+        super().__init__(root)
         self.z_worker = None
         self.samples = [s for s in zipfile.ZipFile(root).namelist() if split in s and s.endswith('.JPEG')]
 
