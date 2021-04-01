@@ -111,13 +111,13 @@ class VAE(nn.Module):
         super().__init__()
         self.prior = prior
         self.encoder = ConditionalNormal(nn.Sequential(
-            nn.Conv2d(3, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.Conv2d(3, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
+            nn.Conv2d(16, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
             nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
             nn.Conv2d(64, 128, 3, 2, 1), nn.BatchNorm2d(128), nn.ReLU(),
             nn.Conv2d(128, 256, 3, 2, 1), nn.BatchNorm2d(256), nn.ReLU(),
-            nn.Conv2d(256, 512, 3, 2, 1), nn.BatchNorm2d(512), nn.ReLU(),
             nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(512, latent_size*2, 1)
+            nn.Conv2d(256, latent_size*2, 1)
         ))
         self.decoder = ConditionalNormalMean(Decoder(latent_size))
 
