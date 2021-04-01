@@ -39,8 +39,8 @@ class Decoder(nn.Module):
 
     def forward(self, context):
         z, l = context
-        with torch.no_grad():
-            x1, x2, x3, x4 = map(self.backbone(l).get, ["x1", "x2", "x3", "x4"])
+        # with torch.no_grad():
+        x1, x2, x3, x4 = map(self.backbone(l).get, ["x1", "x2", "x3", "x4"])
         x1 = self.out1(x1)
         x2 = self.out2(x2)
         x3 = self.out3(x3)

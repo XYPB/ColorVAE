@@ -51,8 +51,8 @@ if __name__=='__main__':
     #############
 
     model = get_model(using_vae=args.using_vae).to(device)
-    model.decoder.net.backbone.requires_grad = False
-    model.decoder.net.backbone.eval()
+    # model.decoder.net.backbone.requires_grad = False
+    # model.decoder.net.backbone.eval()
     optim = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     sched = LinearWarmupScheduler(optim, 1000)
 
@@ -79,7 +79,7 @@ if __name__=='__main__':
     for epoch in range(args.num_epoch):
         cum_loss = 0.0
         pbar = tqdm(tr_loader)
-        model.encoder.train()
+        model.train()
         for i, (l, ab) in enumerate(pbar):
             l = l.to(device)
             ab = ab.to(device)
@@ -97,7 +97,7 @@ if __name__=='__main__':
                 wandb.log({"Train/nll": loss})
             gIter += 1
 
-        model.encoder.eval()
+        model.eval()
         with torch.no_grad():
             cum_loss = 0.0
             pbar = tqdm(va_loader)
