@@ -53,9 +53,10 @@ class Decoder(nn.Module):
         return self.out(z1)
 
 class VAE(nn.Module):
-    def __init__(self, prior, latent_size=20):
+    def __init__(self, prior, latent_size=20, using_vae=True):
         super().__init__()
         self.prior = prior
+        self.using_vae = using_vae
         self.encoder = ConditionalNormal(nn.Sequential(
             nn.Conv2d(3, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
             nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
@@ -70,9 +71,11 @@ class VAE(nn.Module):
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
-        # z, log_qz = self.encoder.sample_with_log_prob(context=raw)
-        z = self.prior.sample(x.size(0))
-        log_qz = self.prior.log_prob(z)
+        if using_vae:
+            z, log_qz = self.encoder.sample_with_log_prob(context=raw)
+        else:
+            z = self.prior.sample(x.size(0))
+            log_qz = self.prior.log_prob(z)
         log_px = self.decoder.log_prob(x, context=(z, l))
         return self.prior.log_prob(z) + log_px - log_qz
 

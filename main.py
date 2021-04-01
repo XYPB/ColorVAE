@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 
-from schedular import LinearWarmupScheduler
+from survae.optim.schedulers import LinearWarmupScheduler
 from data import get_data_loaders, reconstruct
 from model import get_model
 
@@ -19,6 +19,7 @@ parser.add_argument('--num_epoch', type=int, default=64)
 parser.add_argument('--img_size', type=int, default=64)
 parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--using_vae', type=bool, default=False)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -35,7 +36,7 @@ if __name__=='__main__':
     ##  Model  ##
     #############
 
-    model = get_model().to(device)
+    model = get_model(using_vae=args.using_vae).to(device)
     model.decoder.net.backbone.requires_grad = False
     model.decoder.net.backbone.eval()
     optim = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.9, weight_decay=1e-4)
@@ -85,8 +86,6 @@ if __name__=='__main__':
         writer.add_scalar("Val/nll", cum_loss / len(va_loader), gIter)
 
         with torch.no_grad():
-            print(X_test.shape)
-            print(model.sample(X_test).shape)
             lab = torch.cat([X_test, model.sample(X_test)], 1)
             img = reconstruct(lab)
             writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
