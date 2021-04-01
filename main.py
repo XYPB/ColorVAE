@@ -20,6 +20,7 @@ parser.add_argument('--img_size', type=int, default=256)
 parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--using_vae', action='store_true')
+parser.add_argument('--adam', action='store_true')
 parser.add_argument('--vis_mode', type=str, default='tensorboard', help='one of [tensorboard, plt, wandb]')
 parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [tinyImgNet, tinyImgNetZip, COCO]')
 
@@ -53,7 +54,10 @@ if __name__=='__main__':
     model = get_model(using_vae=args.using_vae).to(device)
     # model.decoder.net.backbone.requires_grad = False
     # model.decoder.net.backbone.eval()
-    optim = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.9, weight_decay=1e-4)
+    if opt.adam:
+        optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    else:
+        optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     sched = LinearWarmupScheduler(optim, 1000)
 
     ###############
