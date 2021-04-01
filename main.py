@@ -7,7 +7,7 @@ import argparse
 import os
 
 from survae.optim.schedulers import LinearWarmupScheduler
-from data import get_data_loaders, reconstruct
+from data import get_data_loaders, reconstruct, save_plt_img
 from model import get_model
 
 parser = argparse.ArgumentParser()
@@ -91,13 +91,19 @@ if __name__=='__main__':
         with torch.no_grad():
             lab = torch.cat([X_test, model.sample(X_test)], 1)
             img = reconstruct(lab)
-            writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
+            if args.using_plt:
+                save_plt_img(img.transpose(0, 3, 1, 2))
+            else:
+                writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
 
             l = lab[:1, 0].repeat(64, 1, 1, 1)
             z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
             z = torch.stack(z, -1).reshape(64, 2, 1, 1).to(device)
             lab = torch.cat([l, model.transform(z, l)], 1)
             img = reconstruct(lab)
-            writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
+            if args.using_plt:
+                save_plt_img(img.transpose(0, 3, 1, 2))
+            else:
+                writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
 
         torch.save(model.state_dict(), os.path.join(args.param_path, args.exp_name+'_model.pt'))
