@@ -24,11 +24,13 @@ parser.add_argument('--using_plt', action='store_true')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
 if __name__=='__main__':
     ############
     ##  Data  ##
     ############
     args = parser.parse_args()
+    os.makedirs(args.param_path, exist_ok=True)
 
     torch.manual_seed(0)
     tr_loader, va_loader = get_data_loaders(args.batch_size, args.img_size)
