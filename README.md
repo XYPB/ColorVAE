@@ -13,6 +13,8 @@ pip install git+https://github.com/didriknielsen/survae_flows.git
 kaggle datasets download -d akash2sharma/tiny-imagenet
 ```
 
+Please delete the duplicated folder in the zip file before training 
+
 ### Train
 
 ```bash
