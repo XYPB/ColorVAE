@@ -66,8 +66,7 @@ if __name__=='__main__':
     elif args.vis_mode == 'wandb':
         import wandb
         wandb.init(project='colorvae')
-        config = wandb.config
-        config.learning_rate=args.lr
+        wandb.config.update(args)
         wandb.watch(model)
     gIter = 0
 
