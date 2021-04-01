@@ -1,5 +1,12 @@
 # Color VAE
 
+### VAE package
+
+Please install [survae](https://github.com/didriknielsen/survae_flows) first
+```bash
+pip install git+https://github.com/didriknielsen/survae_flows.git
+```
+
 ### Downlaod Dataset
 
 ```bash

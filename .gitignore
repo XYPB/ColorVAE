@@ -3,3 +3,4 @@ runs
 *.pyc
 coco
 model.pt
+.vscode/*

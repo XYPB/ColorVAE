@@ -24,6 +24,8 @@ tr_loader, va_loader = get_data_loaders(64)
 model = get_model().to(device)
 optim = torch.optim.SGD(model.parameters(), lr=1e-2, momentum=0.9, weight_decay=1e-4)
 sched = LinearWarmupScheduler(optim, 1000)
+model.decoder.net.backbone.require_grad = False
+model.decoder.net.backbone.eval()
 
 ###############
 ##  Logging  ##
@@ -41,6 +43,7 @@ y_test = y_test.to('cuda')
 for epoch in range(16):
     cum_loss = 0.0
     pbar = tqdm(tr_loader)
+    model.encoder.train()
     for i, (l, ab) in enumerate(pbar):
         l = l.to(device)
         ab = ab.to(device)
@@ -55,6 +58,7 @@ for epoch in range(16):
         writer.add_scalar("Train/nll", loss, gIter)
         gIter += 1
 
+    model.encoder.eval()
     with torch.no_grad():
         cum_loss = 0.0
         pbar = tqdm(va_loader)

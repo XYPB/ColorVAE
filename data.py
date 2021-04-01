@@ -56,8 +56,8 @@ def get_data_loaders(batch_size):
     # ])
     # tr_loader = DataLoader(COCO("coco", "train", _trans), batch_size, shuffle=True, num_workers=8)
     # va_loader = DataLoader(COCO("coco", "val", _trans), batch_size, shuffle=True, num_workers=8)
-    tr_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "train"), batch_size)
-    va_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "valid"), batch_size)
+    tr_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "train"), batch_size, num_workers=4)
+    va_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "valid"), batch_size, num_workers=4)
     return tr_loader, va_loader
 
 def reconstruct(imgs: torch.Tensor) -> np.ndarray:
