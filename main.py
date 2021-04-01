@@ -53,7 +53,7 @@ if __name__=='__main__':
     model = get_model(using_vae=args.using_vae).to(device)
     # model.decoder.net.backbone.requires_grad = False
     # model.decoder.net.backbone.eval()
-    optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
+    optim = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     sched = LinearWarmupScheduler(optim, 1000)
 
     ###############
