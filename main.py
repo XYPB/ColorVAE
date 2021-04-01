@@ -83,9 +83,9 @@ if __name__=='__main__':
             l = l.to(device)
             ab = ab.to(device)
             loss = -model.log_prob(ab, l).mean() / (args.img_size * args.img_size * 2)
-
             optim.zero_grad()
-            loss.backward()
+            if not torch.isnan(loss):
+                loss.backward()
             optim.step()
             sched.step()
             cum_loss += loss.item()
