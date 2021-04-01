@@ -32,7 +32,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #     lr = 0.01
 #     using_vae = True
 #     using_plt = True
-#     dataset = tinyImgNet
+#     dataset = 'tinyImgNet'
+#     param_path = 'models/'
+#     exp_name = 'vae'
 
 if __name__=='__main__':
     ############
