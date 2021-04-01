@@ -18,6 +18,6 @@ Please delete the duplicated folder in the zip file before training
 ### Train
 
 ```bash
-python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode tensorboard
+python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode wandb
 ```
 

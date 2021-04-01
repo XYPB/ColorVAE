@@ -60,10 +60,10 @@ if __name__=='__main__':
     ##  Logging  ##
     ###############
 
-    if args.vis_model == 'tensorboard':
+    if args.vis_mode == 'tensorboard':
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(flush_secs=30)
-    elif args.vis_model == 'wandb':
+    elif args.vis_mode == 'wandb':
         import wandb
         wandb.init(project='colorvae')
         config = wandb.config
