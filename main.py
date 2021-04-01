@@ -43,7 +43,6 @@ if __name__=='__main__':
     args = parser.parse_args()
     os.makedirs(args.param_path, exist_ok=True)
 
-    torch.manual_seed(0)
     tr_loader, va_loader = get_data_loaders(args.batch_size, args.dataset, args.img_size)
 
     #############
