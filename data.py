@@ -8,6 +8,9 @@ import zipfile
 import os
 import io
 from PIL import Image
+from IPython.display import Image as kaggleImage
+from IPython.display import display
+
 
 mean = np.array([48., 2.5, 9.2], dtype=np.float32)
 std = np.array([27., 13., 18.], dtype=np.float32)
@@ -83,12 +86,12 @@ def reconstruct(imgs: torch.Tensor) -> np.ndarray:
     return np.stack(rgb)
 
 def save_plt_img(imgs, n_rows=8):
-    # img should of shape Nx3xHxW;
-    N,_,H,W = imgs.shape
+    # img should of shape NxHxWx3;
+    N,H,W,_ = imgs.shape
 
     rows = []
     for i in range(N / n_rows):
-        rows.append(imgs[i*n_rows:i*n_rows+n_rows].reshape(-1, N, 3))
+        rows.append(imgs[i*n_rows:i*n_rows+n_rows].reshape(-1, W, 3))
     img = np.concatenate(rows, 1)
     plt.imsave("im.jpg", img)
-    display(Image("im.jpg", width=1024))
+    display(kaggleImage("im.jpg", width=1024))

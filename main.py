@@ -103,7 +103,7 @@ if __name__=='__main__':
             lab = torch.cat([X_test, model.sample(X_test)], 1)
             img = reconstruct(lab)
             if args.using_plt:
-                save_plt_img(img.transpose(0, 3, 1, 2))
+                save_plt_img(img)
             else:
                 writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
 
@@ -113,7 +113,7 @@ if __name__=='__main__':
             lab = torch.cat([l, model.transform(z, l)], 1)
             img = reconstruct(lab)
             if args.using_plt:
-                save_plt_img(img.transpose(0, 3, 1, 2))
+                save_plt_img(img)
             else:
                 writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
 
