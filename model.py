@@ -13,7 +13,7 @@ class ConditionalNormalMean(ConditionalNormal):
     def cond_dist(self, context):
         params = self.net(context)
         mean, log_std = torch.chunk(params, chunks=2, dim=self.split_dim)
-        return Normal(loc=mean, scale=log_std.exp() + EPS)
+        return Normal(loc=mean, scale=log_std.exp() + self.EPS)
 
     def sample(self, context):
         return self.mean(context)
