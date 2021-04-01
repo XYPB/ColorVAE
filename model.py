@@ -124,9 +124,9 @@ class VAE(nn.Module):
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
-        # z, log_qz = self.encoder.sample_with_log_prob(context=raw)
-        z = self.prior.sample(x.size(0))
-        log_qz = self.prior.log_prob(z)
+        z, log_qz = self.encoder.sample_with_log_prob(context=raw)
+        # z = self.prior.sample(x.size(0))
+        # log_qz = self.prior.log_prob(z)
         log_px = self.decoder.log_prob(x, context=(z, l))
         return self.prior.log_prob(z) + log_px - log_qz
 
