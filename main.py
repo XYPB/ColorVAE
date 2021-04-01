@@ -24,8 +24,8 @@ tr_loader, va_loader = get_data_loaders(64)
 model = get_model().to(device)
 optim = torch.optim.SGD(model.parameters(), lr=1e-2, momentum=0.9, weight_decay=1e-4)
 sched = LinearWarmupScheduler(optim, 1000)
-model.decoder.net.backbone.require_grad = False
-model.decoder.net.backbone.eval()
+# model.decoder.net.backbone.require_grad = False
+# model.decoder.net.backbone.eval()
 
 ###############
 ##  Logging  ##
