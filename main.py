@@ -118,7 +118,7 @@ if __name__=='__main__':
             if args.vis_mode == 'tensorboard':
                 writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
             elif args.vis_mode == 'wandb':
-                wandb.log({'result': list(img.transpose(0, 3, 1, 2))})
+                wandb.log({'result': wandb.Image(list(img.transpose(0, 3, 1, 2)))})
             else:
                 save_plt_img(img)
 
@@ -130,7 +130,7 @@ if __name__=='__main__':
             if args.vis_mode == 'tensorboard':
                 writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
             elif args.vis_mode == 'wandb':
-                wandb.log({'sample': list(img.transpose(0, 3, 1, 2))})
+                wandb.log({'sample': wandb.Image(list(img.transpose(0, 3, 1, 2)))})
             else:
                 save_plt_img(img)
 
