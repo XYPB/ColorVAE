@@ -5,7 +5,10 @@ import torch.nn.functional as F
 from survae.distributions import StandardNormal, ConditionalNormal
 from survae.utils import sum_except_batch
 from torchvision.models import resnet50
+from torchvision.models.segmentation import deeplabv3_resnet50, deeplabv3
+from torchvision.models.segmentation._utils import _SimpleSegmentationModel
 from torchvision.models._utils import IntermediateLayerGetter
+from torchvision.models.utils import load_state_dict_from_url
 
 class ConditionalNormalMean(ConditionalNormal):
     def sample(self, context):
@@ -14,20 +17,13 @@ class ConditionalNormalMean(ConditionalNormal):
 class Decoder(nn.Module):
     def __init__(self, latent_size=20):
         super().__init__()
-        backbone = resnet50(True)
-        backbone.conv1.in_channels = 1
-        backbone.conv1.weight.data = backbone.conv1.weight.data.mean(1, keepdims=True)
-        self.backbone = IntermediateLayerGetter(backbone, dict([(f"layer{i}", f"x{i}") for i in range(1, 5)]))
-
-        self.out4 = nn.Conv2d(2048, 256, 1)
-        self.out3 = nn.Conv2d(1024, 256, 1)
-        self.out2 = nn.Conv2d(512, 256, 1)
-        self.out1 = nn.Conv2d(256, 256, 1)
-
-        self.up4 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up3 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
+        backbone = resnet50(False, replace_stride_with_dilation=[False, True, True])
+        backbone = IntermediateLayerGetter(backbone, {"layer4": "out"})
+        classifier = nn.Sequential(deeplabv3.ASPP(2048, [12, 24, 36]))
+        self.backbone = deeplabv3.DeepLabV3(backbone, classifier, None)
+        self.backbone.load_state_dict(load_state_dict_from_url('https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth', progress=True), strict=False)
+        self.backbone.backbone.conv1.in_channels = 1
+        self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
 
         self.decode = nn.Conv2d(latent_size, 256, 1)
         self.out =nn.Sequential(
@@ -41,17 +37,10 @@ class Decoder(nn.Module):
     def forward(self, context):
         z, l = context
         # with torch.no_grad():
-        x1, x2, x3, x4 = map(self.backbone(l).get, ["x1", "x2", "x3", "x4"])
-        x1 = self.out1(x1)
-        x2 = self.out2(x2)
-        x3 = self.out3(x3)
-        x4 = self.out4(x4)
-
-        z4 = self.up4((x4 + self.decode(z)) / 2)
-        z3 = self.up3((x3 + F.interpolate(z4, scale_factor=2)) / 2)
-        z2 = self.up2((x2 + F.interpolate(z3, scale_factor=2)) / 2)
-        z1 = self.up2((x1 + F.interpolate(z2, scale_factor=2)) / 2)
-        return self.out(z1)
+        x = self.backbone(l)["out"]
+        x += self.decode(z)
+        x = F.interpolate(x, scale_factor=8, mode='bilinear', align_corners=False)
+        return self.out(x)
 
 class VAE(nn.Module):
     def __init__(self, prior, latent_size=20, using_vae=True):
