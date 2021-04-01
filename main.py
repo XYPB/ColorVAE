@@ -30,7 +30,7 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     torch.manual_seed(0)
-    tr_loader, va_loader = get_data_loaders(args.batch_size)
+    tr_loader, va_loader = get_data_loaders(args.batch_size, args.img_size)
 
     #############
     ##  Model  ##
