@@ -89,6 +89,6 @@ class VAE(nn.Module):
         return x
 
 
-def get_model(pretrained_backbone=True):
+def get_model(pretrained_backbone=True, using_vae=True):
     prior = StandardNormal((2,1,1))
-    return VAE(prior, 2)
+    return VAE(prior, 2, using_vae=using_vae)

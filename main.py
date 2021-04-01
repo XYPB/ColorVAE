@@ -19,7 +19,7 @@ parser.add_argument('--num_epoch', type=int, default=64)
 parser.add_argument('--img_size', type=int, default=64)
 parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--lr', type=float, default=1e-2)
-parser.add_argument('--using_vae', type=bool, default=False)
+parser.add_argument('--using_vae', action='store_true')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

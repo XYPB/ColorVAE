@@ -16,6 +16,6 @@ kaggle datasets download -d akash2sharma/tiny-imagenet
 ### Train
 
 ```bash
-python main.py
+python main.py --using_vae False
 ```
 
