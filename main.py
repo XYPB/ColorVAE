@@ -12,7 +12,7 @@ from model import get_model
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p','--data_path', type=str, default='tiny-imagenet.zip')
-parser.add_argument('--param_path', type=str, default='models/model.pth')
+parser.add_argument('--param_path', type=str, default='models')
 parser.add_argument('--batch_size', type=int, default=4)
 parser.add_argument('--output_dir', type=str, default='imgs_out/')
 parser.add_argument('--num_epoch', type=int, default=64)
@@ -97,4 +97,4 @@ if __name__=='__main__':
             img = reconstruct(lab)
             writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
 
-        torch.save(model.state_dict(), os.join(args.param_path, args.exp_name+'_model.pt'))
+        torch.save(model.state_dict(), os.path.join(args.param_path, args.exp_name+'_model.pt'))
