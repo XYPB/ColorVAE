@@ -94,7 +94,7 @@ if __name__=='__main__':
             if args.vis_mode == 'tensorboard':
                 writer.add_scalar("Train/nll", loss, gIter)
             elif args.vis_mode == 'wandb':
-                wandb.log({"Train/nll", loss})
+                wandb.log({"Train/nll": loss})
             gIter += 1
 
         model.encoder.eval()
@@ -110,7 +110,7 @@ if __name__=='__main__':
         if args.vis_mode == 'tensorboard':
             writer.add_scalar("Val/nll", cum_loss / len(va_loader), gIter)
         elif args.vis_mode == 'wandb':
-            wandb.log({"Val/nll", cum_loss / len(va_loader)})
+            wandb.log({"Val/nll": cum_loss / len(va_loader)})
 
         with torch.no_grad():
             lab = torch.cat([X_test, model.sample(X_test)], 1)

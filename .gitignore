@@ -5,3 +5,4 @@ coco
 model.pt
 .vscode/*
 models/*
+wandb/*
