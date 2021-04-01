@@ -36,9 +36,12 @@ class Decoder(nn.Module):
 
     def forward(self, context):
         z, l = context
+        print(l.shape)
         # with torch.no_grad():
         x = self.backbone(l)["out"]
+        print(x.shape)
         x += self.decode(z)
+        print(x.shape)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
         return self.out(x)
 
