@@ -4,3 +4,4 @@ runs
 coco
 model.pt
 .vscode/*
+models/*
