@@ -21,6 +21,7 @@ parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--using_vae', action='store_true')
 parser.add_argument('--using_plt', action='store_true')
+parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [tinyImgNet, tinyImgNetZip, COCO]')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -31,6 +32,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #     lr = 0.01
 #     using_vae = True
 #     using_plt = True
+#     dataset = tinyImgNet
 
 if __name__=='__main__':
     ############
@@ -40,7 +42,7 @@ if __name__=='__main__':
     os.makedirs(args.param_path, exist_ok=True)
 
     torch.manual_seed(0)
-    tr_loader, va_loader = get_data_loaders(args.batch_size, args.img_size)
+    tr_loader, va_loader = get_data_loaders(args.batch_size, args.dataset, args.img_size)
 
     #############
     ##  Model  ##
