@@ -39,7 +39,7 @@ class Decoder(nn.Module):
         # with torch.no_grad():
         x = self.backbone(l)["out"]
         x += self.decode(z)
-        x = F.interpolate(x, scale_factor=8, mode='bilinear', align_corners=False)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
         return self.out(x)
 
 class VAE(nn.Module):
