@@ -12,7 +12,7 @@ from model import get_model
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p','--data_path', type=str, default='tiny-imagenet.zip')
-parser.add_argument('--param_path', type=str, default='models')
+parser.add_argument('--param_path', type=str, default='models/')
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--output_dir', type=str, default='imgs_out/')
 parser.add_argument('--num_epoch', type=int, default=16)
@@ -30,6 +30,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #     num_epoch=16
 #     lr = 0.01
 #     using_vae = True
+#     using_plt = True
 
 if __name__=='__main__':
     ############
