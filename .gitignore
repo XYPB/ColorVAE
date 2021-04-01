@@ -1,3 +1,5 @@
 *.zip
 runs
 *.pyc
+coco
+model.pt

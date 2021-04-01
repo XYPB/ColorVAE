@@ -14,6 +14,7 @@ device = 'cuda'
 ##  Data  ##
 ############
 
+torch.manual_seed(0)
 tr_loader, va_loader = get_data_loaders(64)
 
 #############
@@ -66,6 +67,17 @@ for epoch in range(16):
     writer.add_scalar("Val/nll", cum_loss / len(va_loader), gIter)
 
     with torch.no_grad():
+        print(X_test.shape)
+        print(model.sample(X_test).shape)
         lab = torch.cat([X_test, model.sample(X_test)], 1)
         img = reconstruct(lab)
+        writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
+
+        l = lab[:1, 0].repeat(64, 1, 1, 1)
+        z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
+        z = torch.stack(z, -1).reshape(64, 2, 1, 1).to(device)
+        lab = torch.cat([l, model.transform(z, l)], 1)
+        img = reconstruct(lab)
         writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
+
+        torch.save(model.state_dict(), "model.pt")

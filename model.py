@@ -1,66 +1,10 @@
-import math
 import torch
 from torch import nn
-from torch.distributions import Normal
 import torch.nn.functional as F
-from resnet import resnet50, _resnet
 
-
-def sum_except_batch(x, num_dims=1):
-    return x.reshape(*x.shape[:num_dims], -1).sum(-1)
-
-
-class StandardNormal(nn.Module):
-    """A multivariate Normal with zero mean and unit covariance."""
-
-    def __init__(self, shape):
-        super(StandardNormal, self).__init__()
-        self.shape = torch.Size(shape)
-        self.register_buffer('buffer', torch.zeros(1))
-
-    def log_prob(self, x):
-        log_base =  - 0.5 * math.log(2 * math.pi)
-        log_inner = - 0.5 * x**2
-        return sum_except_batch(log_base+log_inner)
-
-    def sample(self, num_samples):
-        return torch.randn(num_samples, *self.shape, device=self.buffer.device, dtype=self.buffer.dtype)
-
-
-class ConditionalNormal(nn.Module):
-    """A multivariate Normal with conditional mean and log_std."""
-
-    def __init__(self, net, split_dim=1):
-        super(ConditionalNormal, self).__init__()
-        self.net = net
-        self.split_dim = split_dim
-
-    def cond_dist(self, context):
-        params = self.net(context)
-        mean, log_std = torch.chunk(params, chunks=2, dim=self.split_dim)
-        return Normal(loc=mean, scale=log_std.exp())
-
-    def log_prob(self, x, context):
-        dist = self.cond_dist(context)
-        return sum_except_batch(dist.log_prob(x))
-
-    def sample(self, context):
-        dist = self.cond_dist(context)
-        return dist.rsample()
-
-    def sample_with_log_prob(self, context):
-        dist = self.cond_dist(context)
-        z = dist.rsample()
-        log_prob = dist.log_prob(z)
-        log_prob = sum_except_batch(log_prob)
-        return z, log_prob
-
-    def mean(self, context):
-        return self.cond_dist(context).mean
-
-    def mean_stddev(self, context):
-        dist = self.cond_dist(context)
-        return dist.mean, dist.stddev
+from survae.distributions import StandardNormal, ConditionalNormal
+from torchvision.models import resnet50
+from torchvision.models._utils import IntermediateLayerGetter
 
 class ConditionalNormalMean(ConditionalNormal):
     def sample(self, context):
@@ -69,7 +13,10 @@ class ConditionalNormalMean(ConditionalNormal):
 class Decoder(nn.Module):
     def __init__(self, latent_size=20):
         super().__init__()
-        self.backbone = resnet50(True, fcn=True, in_channels=1)
+        backbone = resnet50(True)
+        backbone.conv1.in_channels = 1
+        backbone.conv1.weight.data = backbone.conv1.weight.data.mean(1, keepdims=True)
+        self.backbone = IntermediateLayerGetter(backbone, dict([(f"layer{i}", f"x{i}") for i in range(1, 5)]))
 
         self.out4 = nn.Conv2d(2048, 256, 1)
         self.out3 = nn.Conv2d(1024, 256, 1)
@@ -86,15 +33,13 @@ class Decoder(nn.Module):
             nn.Conv2d(256, 256, 3, 1, 1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(256, 256, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
             nn.Conv2d(256, 2*2, 3, 1, 1),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         )
 
     def forward(self, context):
         z, l = context
-        x1, x2, x3, x4 = self.backbone(l)
+        x1, x2, x3, x4 = map(self.backbone(l).get, ["x1", "x2", "x3", "x4"])
         x1 = self.out1(x1)
         x2 = self.out2(x2)
         x3 = self.out3(x3)
@@ -118,8 +63,8 @@ class VAE(nn.Module):
             nn.Conv2d(256, 512, 3, 2, 1), nn.BatchNorm2d(512), nn.ReLU(),
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Conv2d(512, latent_size*2, 1)
-        ))
-        self.decoder = ConditionalNormalMean(Decoder(latent_size))
+        ), split_dim=1)
+        self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
 
 
     def log_prob(self, x, l):
@@ -133,7 +78,11 @@ class VAE(nn.Module):
     def sample(self, l, num_samples=1):
         z = self.prior.sample(l.size(0))
         x = self.decoder.sample(context=(z, l))
-        return F.interpolate(x, l.shape[2:], mode='bilinear', align_corners=False)
+        return x
+
+    def transform(self, z, l):
+        x = self.decoder.sample(context=(z, l))
+        return x
 
 
 def get_model(pretrained_backbone=True):

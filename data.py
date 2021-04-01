@@ -2,9 +2,11 @@ import torch
 import numpy as np
 import torchvision
 from torch.utils.data import DataLoader
+from torchvision import transforms
 from skimage import color
 import zipfile
 import os
+import io
 from PIL import Image
 
 mean = np.array([48., 2.5, 9.2], dtype=np.float32)
@@ -31,9 +33,9 @@ class ColorTinyImageNet(torchvision.datasets.VisionDataset):
 
 class COCO(torchvision.datasets.VisionDataset):
 
-    def __init__(self, root, transform=None, split='train'):
+    def __init__(self, root, split='train', transform=None):
         super().__init__(root)
-        self.samples = os.listdir(root)
+        self.samples = open(split + '_list.txt').read().split()
         self.transform = transform
 
     def __getitem__(self, index: int):
@@ -48,12 +50,14 @@ class COCO(torchvision.datasets.VisionDataset):
         return len(self.samples)
 
 def get_data_loaders(batch_size):
-    _trans = transforms.Compose([
-        transforms.Resize(224),
-        transforms.RandomCrop((224, 224)),
-    ])
-    tr_loader = DataLoader(COCO("coco/train2017", _trans), batch_size, shuffle=True, num_workers=8)
-    va_loader = DataLoader(COCO("coco/val2017", _trans), batch_size, shuffle=True, num_workers=8)
+    # _trans = transforms.Compose([
+    #     transforms.Resize(256),
+    #     transforms.RandomCrop((256, 256)),
+    # ])
+    # tr_loader = DataLoader(COCO("coco", "train", _trans), batch_size, shuffle=True, num_workers=8)
+    # va_loader = DataLoader(COCO("coco", "val", _trans), batch_size, shuffle=True, num_workers=8)
+    tr_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "train"), batch_size)
+    va_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", "valid"), batch_size)
     return tr_loader, va_loader
 
 def reconstruct(imgs: torch.Tensor) -> np.ndarray:
