@@ -25,7 +25,12 @@ class Decoder(nn.Module):
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
 
-        self.decode = nn.Conv2d(latent_size, 256, 1)
+        self.decode = nn.Sequential(
+            nn.Conv2d(latent_size, 256, 1),
+            nn.ReLU(),
+            nn.Conv2d(256, 2048, 1),
+            nn.ReLU(),
+        )
         self.out =nn.Sequential(
             nn.Conv2d(256, 256, 3, 1, 1),
             nn.ReLU(),
@@ -36,13 +41,10 @@ class Decoder(nn.Module):
 
     def forward(self, context):
         z, l = context
-        print(l.shape)
         # with torch.no_grad():
-        x = self.backbone(l)["out"]
-        print(x.shape)
-        x += self.decode(z)
-        print(x.shape)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
+        x = self.backbone.backbone(l)["out"]
+        x = x + self.decode(z)
+        x = F.interpolate(self.backbone.classifier(x), scale_factor=2, mode='bilinear', align_corners=False)
         return self.out(x)
 
 class VAE(nn.Module):
