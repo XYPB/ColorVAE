@@ -55,7 +55,7 @@ def get_data_loaders(batch_size, img_size=256):
         transforms.RandomCrop((img_size, img_size)),
     ])
     tr_loader = DataLoader(COCO("coco/train2017", _trans), batch_size, shuffle=True, num_workers=8)
-    va_loader = DataLoader(COCO("coco/val2017", _trans), batch_size, shuffle=True, num_workers=8)
+    va_loader = DataLoader(COCO("coco/val2017", _trans), batch_size, shuffle=False, num_workers=8)
     # tr_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", split="train"), batch_size, num_workers=4, shuffle=True)
     # va_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", split="val"), batch_size, num_workers=4, shuffle=True)
     return tr_loader, va_loader
