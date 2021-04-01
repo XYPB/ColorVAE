@@ -66,3 +66,14 @@ def reconstruct(imgs: torch.Tensor) -> np.ndarray:
         img = img * std + mean
         rgb.append(color.lab2rgb(img))
     return np.stack(rgb)
+
+def save_plt_img(imgs, n_rows=8):
+    # img should of shape Nx3xHxW;
+    N,_,H,W = imgs.shape
+
+    rows = []
+    for i in range(N / n_rows):
+        rows.append(imgs[i*n_rows:i*n_rows+n_rows].reshape(-1, N, 3))
+    img = np.concatenate(rows, 1)
+    plt.imsave("im.jpg", img)
+    display(Image("im.jpg", width=1024))
