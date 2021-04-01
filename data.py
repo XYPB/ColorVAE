@@ -34,9 +34,9 @@ class ColorTinyImageNet(torchvision.datasets.VisionDataset):
 
 class COCO(torchvision.datasets.VisionDataset):
 
-    def __init__(self, root, transform=None):
+    def __init__(self, root, filelist, transform=None):
         super().__init__(root)
-        self.samples = os.listdir(root)
+        self.samples = open(filelist).read().split()
         self.transform = transform
 
     def __getitem__(self, index: int):
@@ -67,8 +67,8 @@ def get_data_loaders(batch_size, dataset, img_size=256):
         tr_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", split="train"), batch_size, num_workers=4, shuffle=True)
         va_loader = DataLoader(ColorTinyImageNet("tiny-imagenet.zip", split="val"), batch_size, num_workers=4, shuffle=True)
     elif dataset == 'COCO':
-        tr_loader = DataLoader(COCO("coco/train2017", _trans), batch_size, shuffle=True, num_workers=8)
-        va_loader = DataLoader(COCO("coco/val2017", _trans), batch_size, shuffle=True, num_workers=8)
+        tr_loader = DataLoader(COCO("coco/train2017", "train_list.txt", _trans), batch_size, shuffle=True, num_workers=8)
+        va_loader = DataLoader(COCO("coco/val2017", "val_list.txt", _trans), batch_size, shuffle=True, num_workers=8)
     elif dataset == 'tinyImgNet':
         tr_loader = DataLoader(ColorImageNet("../input/tiny-imagenet/tiny-imagenet-200/train"), batch_size, shuffle=True)
         va_loader = DataLoader(ColorImageNet("../input/tiny-imagenet/tiny-imagenet-200/val"), batch_size, shuffle=True)

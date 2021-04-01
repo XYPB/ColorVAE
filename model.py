@@ -3,6 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from survae.distributions import StandardNormal, ConditionalNormal
+from survae.utils import sum_except_batch
 from torchvision.models import resnet50
 from torchvision.models._utils import IntermediateLayerGetter
 
@@ -71,13 +72,14 @@ class VAE(nn.Module):
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
-        if self.using_vae:
-            z, log_qz = self.encoder.sample_with_log_prob(context=raw)
-        else:
-            z = self.prior.sample(x.size(0))
-            log_qz = self.prior.log_prob(z)
+        if not self.using_vae:
+            q = self.prior
+            z = q.sample(x.size(0))
+            return self.decoder.log_prob(x, context=(z, l))
+        q = self.encoder.cond_dist(raw)
+        z = q.sample()
         log_px = self.decoder.log_prob(x, context=(z, l))
-        return self.prior.log_prob(z) + log_px - log_qz
+        return log_px - self.kld(q)
 
     def sample(self, l, num_samples=1):
         z = self.prior.sample(l.size(0))
@@ -87,6 +89,10 @@ class VAE(nn.Module):
     def transform(self, z, l):
         x = self.decoder.sample(context=(z, l))
         return x
+    
+    def kld(self, q:torch.distributions.Normal):
+        kld = 0.5 * torch.sum(1 + 2 * q.scale.log() - q.loc.pow(2) - q.scale.pow(2))
+        return sum_except_batch(kld)
 
 
 def get_model(pretrained_backbone=True, using_vae=True):
