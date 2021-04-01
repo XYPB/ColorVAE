@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from survae.distributions import StandardNormal, ConditionalNormal
 from survae.utils import sum_except_batch
+from torch.distributions import Normal
 from torchvision.models import resnet50
 from torchvision.models._utils import IntermediateLayerGetter
 
