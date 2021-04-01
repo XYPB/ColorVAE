@@ -38,11 +38,14 @@ class Decoder(nn.Module):
 
         self.decode = nn.Conv2d(latent_size, 256, 1)
         self.out =nn.Sequential(
-            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.ReLU(),
+            nn.Conv2d(256, 128, 1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(256, 2*2, 3, 1, 1),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+            nn.Conv2d(128, 64, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(64, 2*2, 3, 1, 1),
         )
 
     def forward(self, context):
