@@ -5,8 +5,7 @@ import torch.nn.functional as F
 from survae.distributions import StandardNormal, ConditionalNormal
 from survae.utils import sum_except_batch
 from torchvision.models import resnet50
-from torchvision.models.segmentation import deeplabv3_resnet50, deeplabv3
-from torchvision.models.segmentation._utils import _SimpleSegmentationModel
+from torchvision.models.segmentation import deeplabv3
 from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.utils import load_state_dict_from_url
 

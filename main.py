@@ -64,6 +64,7 @@ if __name__=='__main__':
         writer = SummaryWriter(flush_secs=30)
     elif args.vis_mode == 'wandb':
         import wandb
+        # wandb.login(key=None)
         wandb.init(project='colorvae')
         wandb.config.update(args)
         wandb.watch(model)
