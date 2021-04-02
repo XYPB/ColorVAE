@@ -58,7 +58,8 @@ if __name__=='__main__':
         optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     else:
         optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
-    sched = LinearWarmupScheduler(optim, 1000, [args.num_epoch // 10 * 7, args.num_epoch // 10 * 9])
+    sched = LinearWarmupScheduler(optim, 1000, [
+        args.num_epoch // 10 * 7 * len(tr_loader), args.num_epoch // 10 * 9 * len(tr_loader)])
 
     ###############
     ##  Logging  ##
