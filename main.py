@@ -128,7 +128,7 @@ if __name__=='__main__':
             l = lab[:1, 0].repeat(64, 1, 1, 1)
             z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
             z = torch.stack(z, -1).flatten(0, 1).to(device)
-            lab = torch.cat([l, model.module.transform(z, l)], 1)
+            lab = torch.cat([l, model.transform(z, l)], 1)
             img = reconstruct(lab)
             if args.vis_mode == 'tensorboard':
                 writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
