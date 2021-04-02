@@ -70,7 +70,7 @@ class VAE(Distribution):
         super().__init__()
         self.prior = prior
         self.using_vae = using_vae
-        self.encoder = ConditionalNormalEPS(nn.Sequential(
+        self.encoder = ConditionalNormal(nn.Sequential(
             nn.Conv2d(3, 4, 3, 2, 1), nn.BatchNorm2d(4), nn.ReLU(),
             nn.Conv2d(4, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
             nn.Conv2d(8, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
