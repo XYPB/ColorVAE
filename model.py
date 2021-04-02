@@ -75,14 +75,14 @@ class VAE(Distribution):
         self.prior = prior
         self.using_vae = using_vae
         self.encoder = ConditionalNormal(nn.Sequential(
-            nn.Conv2d(3, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
+            nn.Conv2d(3, 4, 3, 2, 1), nn.BatchNorm2d(4), nn.ReLU(),
+            nn.Conv2d(4, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
             nn.Conv2d(8, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
             nn.Conv2d(16, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
             nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
-            nn.Conv2d(64, 128, 3, 2, 1), nn.BatchNorm2d(128), nn.ReLU(),
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
-            nn.Linear(128, latent_size*2, 1)
+            nn.Linear(64, latent_size*2, 1)
         ), split_dim=1)
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
 
