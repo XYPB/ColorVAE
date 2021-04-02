@@ -82,7 +82,9 @@ class VAE(Distribution):
             nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
-            nn.Linear(64, latent_size*2, 1)
+            nn.Linear(64, 512, 1), nn.ReLU(),
+            nn.Linear(512, 256, 1), nn.ReLU(),
+            nn.Linear(256, latent_size*2, 1), nn.ReLU(),
         ), split_dim=1)
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
 
