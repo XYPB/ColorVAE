@@ -9,16 +9,7 @@ from torchvision.models import resnet50
 from torchvision.models._utils import IntermediateLayerGetter
 
 
-class ConditionalNormalEPS(ConditionalNormal):
-    EPS = 1e-2
-
-    def cond_dist(self, context):
-        params = self.net(context)
-        mean, log_std = torch.chunk(params, chunks=2, dim=self.split_dim)
-        return Normal(loc=mean, scale=log_std.exp() + self.EPS)
-
-
-class ConditionalNormalMean(ConditionalNormalEPS):
+class ConditionalNormalMean(ConditionalNormal):
 
     def sample(self, context):
         return self.mean(context)
@@ -89,7 +80,7 @@ class VAE(Distribution):
             nn.Flatten(),
             nn.Linear(64, 512, 1), nn.ReLU(),
             nn.Linear(512, 256, 1), nn.ReLU(),
-            nn.Linear(256, latent_size*2, 1), nn.ReLU(),
+            nn.Linear(256, latent_size*2, 1)
         ), split_dim=1)
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
 
