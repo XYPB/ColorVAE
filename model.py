@@ -49,11 +49,10 @@ class Decoder(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, latent_size):
         super().__init__()
-        self.backbone = IntermediateLayerGetter(resnet18(True), {'avgpool': 'out'})
-        self.head = nn.Conv2d(2048, latent_size*2, 1)
+        self.backbone = resnet18(True)
+        self.backbone.fc = nn.Linear(512, latent_size*2)
     def forward(self, x):
-        x = self.backbone(x)['out']
-        return self.head(x)
+        return self.backbone(x).unsqueeze(-1).unsqueeze(-1)
 
 
 class VAE(nn.Module):
