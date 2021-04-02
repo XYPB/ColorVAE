@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 
-from survae.optim.schedulers import LinearWarmupScheduler
+from survae.distributions import DataParallelDistribution
 from data import get_data_loaders, reconstruct, save_plt_img
 from model import get_model
+from schedular import LinearWarmupScheduler
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p','--data_path', type=str, default='tiny-imagenet.zip')
@@ -52,13 +53,12 @@ if __name__=='__main__':
     #############
 
     model = get_model(using_vae=args.using_vae).to(device)
-    # model.decoder.net.backbone.requires_grad = False
-    # model.decoder.net.backbone.eval()
+    model = DataParallelDistribution(model)
     if args.adam:
         optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     else:
         optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
-    sched = LinearWarmupScheduler(optim, 1000)
+    sched = LinearWarmupScheduler(optim, 1000, [args.num_epoch // 10 * 7, args.num_epoch // 10 * 9])
 
     ###############
     ##  Logging  ##
@@ -126,8 +126,8 @@ if __name__=='__main__':
 
             l = lab[:1, 0].repeat(64, 1, 1, 1)
             z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
-            z = torch.stack(z, -1).reshape(64, 2, 1, 1).to(device)
-            lab = torch.cat([l, model.transform(z, l)], 1)
+            z = torch.stack(z, -1).flatten(0, 1).to(device)
+            lab = torch.cat([l, model.module.transform(z, l)], 1)
             img = reconstruct(lab)
             if args.vis_mode == 'tensorboard':
                 writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)

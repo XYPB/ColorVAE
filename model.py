@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from survae.distributions import StandardNormal, ConditionalNormal
+from survae.distributions import StandardNormal, ConditionalNormal, Distribution
 from survae.utils import sum_except_batch
 from torch.distributions import Normal
 from torchvision.models import resnet50
@@ -36,10 +36,16 @@ class Decoder(nn.Module):
         self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
         self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
 
-        self.decode = nn.Conv2d(latent_size, 256, 1)
+        self.decode = nn.Sequential(
+            nn.Linear(latent_size, 256), nn.ReLU(),
+            nn.Linear(256, 512), nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.Unflatten(1, (256, 1, 1))
+        )
+
         self.out =nn.Sequential(
             nn.ReLU(),
-            nn.Conv2d(256, 128, 1),
+            nn.Conv2d(256, 128, 3, 1, 1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
             nn.Conv2d(128, 64, 3, 1, 1),
@@ -63,7 +69,7 @@ class Decoder(nn.Module):
         z1 = self.up2((x1 + F.interpolate(z2, scale_factor=2)) / 2)
         return self.out(z1)
 
-class VAE(nn.Module):
+class VAE(Distribution):
     def __init__(self, prior, latent_size=20, using_vae=True):
         super().__init__()
         self.prior = prior
@@ -75,10 +81,10 @@ class VAE(nn.Module):
             nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
             nn.Conv2d(64, 128, 3, 2, 1), nn.BatchNorm2d(128), nn.ReLU(),
             nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(128, latent_size*2, 1)
+            nn.Flatten(),
+            nn.Linear(128, latent_size*2, 1)
         ), split_dim=1)
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
-
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
@@ -101,5 +107,5 @@ class VAE(nn.Module):
 
 
 def get_model(pretrained_backbone=True, using_vae=True):
-    prior = StandardNormal((2,1,1))
+    prior = StandardNormal((2,))
     return VAE(prior, 2, using_vae=using_vae)
