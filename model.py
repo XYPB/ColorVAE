@@ -20,6 +20,8 @@ class Decoder(nn.Module):
         backbone = resnet50(True)
         backbone.conv1.in_channels = 1
         backbone.conv1.weight.data = backbone.conv1.weight.data.mean(1, keepdims=True)
+        for p in backbone.parameters():
+            p.requires_grad = False
         self.backbone = IntermediateLayerGetter(backbone, dict([(f"layer{i}", f"x{i}") for i in range(1, 5)]))
 
         self.out4 = nn.Conv2d(2048, 256, 1)

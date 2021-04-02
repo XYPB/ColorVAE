@@ -8,10 +8,16 @@ import zipfile
 import os
 import io
 from PIL import Image
+import cv2
 
 
 mean = np.array([48., 2.5, 9.2], dtype=np.float32)
 std = np.array([27., 13., 18.], dtype=np.float32)
+
+def rgb2lab(img):
+    _w = np.array([100. / 225, 1, 1], dtype=np.float32)
+    _b = np.array([0., -128, -128], dtype=np.float32)
+    return cv2.cvtColor(np.uint8(img), cv2.COLOR_RGB2LAB) * _w + _b
 
 class ColorTinyImageNet(torchvision.datasets.VisionDataset):
 
@@ -26,7 +32,7 @@ class ColorTinyImageNet(torchvision.datasets.VisionDataset):
             self.z_worker = zipfile.ZipFile(self.root)
         img = self.z_worker.read(path)
         img = Image.open(io.BytesIO(img)).convert('RGB')
-        lab = (np.float32(color.rgb2lab(img)) - mean) / std
+        lab = (rgb2lab(img) - mean) / std
         return lab[None, ..., 0], lab[..., 1:].transpose(2, 0, 1)
 
     def __len__(self) -> int:
@@ -44,7 +50,7 @@ class COCO(torchvision.datasets.VisionDataset):
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
-        lab = (np.float32(color.rgb2lab(img)) - mean) / std
+        lab = (rgb2lab(img) - mean) / std
         return lab[None, ..., 0], lab[..., 1:].transpose(2, 0, 1)
 
     def __len__(self) -> int:
@@ -52,10 +58,11 @@ class COCO(torchvision.datasets.VisionDataset):
 
 mean = np.array([48., 2.5, 9.2], dtype=np.float32)
 std = np.array([27., 13., 18.], dtype=np.float32)
+
 class ColorImageNet(torchvision.datasets.ImageFolder):
     def __getitem__(self, index):
         img = super(ColorImageNet, self).__getitem__(index)[0]
-        img = (np.float32(color.rgb2lab(img)) - mean) / std
+        img = (rgb2lab(img) - mean) / std
         return img[None, ..., 0], img[..., 1:].transpose(2, 0, 1)
 
 def get_data_loaders(batch_size, dataset, img_size=256):
