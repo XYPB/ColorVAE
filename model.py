@@ -6,7 +6,9 @@ from survae.distributions import StandardNormal, ConditionalNormal, ConditionalB
 from survae.utils import sum_except_batch
 from torch.distributions import Normal
 from torchvision.models import resnet50, resnet18
+from torchvision.models.segmentation import deeplabv3
 from torchvision.models._utils import IntermediateLayerGetter
+from torchvision.models.utils import load_state_dict_from_url
 
 
 class ConditionalNormalMean(ConditionalNormal):
@@ -17,50 +19,46 @@ class ConditionalNormalMean(ConditionalNormal):
 class Decoder(nn.Module):
     def __init__(self, latent_size=20):
         super().__init__()
-
-        self.out4 = nn.Conv2d(2048, 256, 1)
-        self.out3 = nn.Conv2d(1024, 256, 1)
-        self.out2 = nn.Conv2d(512, 256, 1)
-        self.out1 = nn.Conv2d(256, 256, 1)
-
-        self.up4 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up3 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.up2 = nn.Conv2d(256, 256, 3, 1, 1)
+        backbone = resnet50(False, replace_stride_with_dilation=[False, True, True])
+        backbone = IntermediateLayerGetter(backbone, {"layer4": "out"})
+        classifier = nn.Sequential(deeplabv3.ASPP(2048, [12, 24, 36]))
+        self.backbone = deeplabv3.DeepLabV3(backbone, classifier, None)
+        self.backbone.load_state_dict(load_state_dict_from_url('https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth', progress=True), strict=False)
+        self.backbone.backbone.conv1.in_channels = 1
+        self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
+        for p in self.backbone.backbone.parameters():
+            p.requires_grad = False
 
         self.decode = nn.Sequential(
             nn.Linear(latent_size, 512), nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.Unflatten(1, (256, 1, 1))
+            nn.Linear(512, 2048),
+            nn.Unflatten(1, (2048, 1, 1))
+        )
+        self.out =nn.Sequential(
+            nn.Conv2d(256, 128, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(128, 64, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(64, 32, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(32, 2*2, 3, 1, 1),
         )
 
-        self.out =nn.Sequential(
-            nn.Conv2d(256, 2*2, 3, 1, 1),
-            nn.UpsamplingBilinear2d(scale_factor=4)
-        )
+    def get_l_feat(self, l):
+        return self.backbone.backbone(l)["out"]
 
     def forward(self, context):
-        z, (x1, x2, x3, x4) = context
-        x1 = self.out1(x1)
-        x2 = self.out2(x2)
-        x3 = self.out3(x3)
-        x4 = self.out4(x4)
-
-        z4 = self.up4((x4 + self.decode(z)) / 2)
-        z3 = self.up3((x3 + F.interpolate(z4, scale_factor=2)) / 2)
-        z2 = self.up2((x2 + F.interpolate(z3, scale_factor=2)) / 2)
-        z1 = self.up2((x1 + F.interpolate(z2, scale_factor=2)) / 2)
-        return self.out(z1.relu())
+        z, l = context
+        x = l + self.decode(z)
+        x = self.backbone.classifier(x)
+        return self.out(x)
 
 class VAE(Distribution):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__()
-        backbone = resnet50(True)
-        backbone.conv1.in_channels = 1
-        backbone.conv1.weight.data = backbone.conv1.weight.data.mean(1, keepdims=True)
-        for p in backbone.parameters():
-            p.requires_grad = False
-        self.l_backbone = IntermediateLayerGetter(backbone, dict([(f"layer{i}", f"x{i}") for i in range(1, 5)]))
 
         r18 = resnet18(True)
         r18.conv1.reset_parameters()
@@ -75,6 +73,7 @@ class VAE(Distribution):
             nn.Linear(256, latent_size*2)
         ))
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
+        self.l_backbone = self.decoder.net.get_l_feat
 
     def log_prob(self, x, l, c_feat=None, l_feat=None):
         if self.vae:
@@ -86,20 +85,20 @@ class VAE(Distribution):
             z = self.prior.sample(x.size(0))
             log_qz = self.prior.log_prob(z)
         if l_feat is None:
-            l_feat = self.l_backbone(l).values()
+            l_feat = self.l_backbone(l)
         log_px = self.decoder.log_prob(x, context=(z, l_feat))
         return self.prior.log_prob(z) + log_px - log_qz
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
         if l_feat is None:
-            l_feat = self.l_backbone(l).values()
+            l_feat = self.l_backbone(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
 
     def transform(self, z, l, l_feat=None):
         if l_feat is None:
-            l_feat = self.l_backbone(l).values()
+            l_feat = self.l_backbone(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
 
@@ -117,7 +116,7 @@ class RejVAE(VAE):
         raw = torch.cat([l, x], 1)
         c_feat = self.c_backbone(raw)['out']
         posterior = self.sampler.probs(context=c_feat).flatten()
-        l_feat = self.l_backbone(l).values()
+        l_feat = self.l_backbone(l)
         G = super().sample(l, l_feat=l_feat)
         G = 2 * G.detach() - G
         prior = self.sampler.probs(context=self.c_backbone(torch.cat([l, G], 1))['out']).mean()
