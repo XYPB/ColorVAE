@@ -63,7 +63,7 @@ if __name__=='__main__':
         model.load_state_dict(torch.load(args.resume), strict=False)
 
     if args.adam:
-        optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+        optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     else:
         optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     sched = LinearWarmupScheduler(optim, 1000, [
