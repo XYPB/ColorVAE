@@ -19,8 +19,10 @@ parser.add_argument('--output_dir', type=str, default='imgs_out/')
 parser.add_argument('--num_epoch', type=int, default=16)
 parser.add_argument('--img_size', type=int, default=256)
 parser.add_argument('--exp_name', type=str, default='tmp')
+parser.add_argument('--resume', type=str, default='')
 parser.add_argument('--lr', type=float, default=1e-2)
-parser.add_argument('--using_vae', action='store_true')
+parser.add_argument('--vae', action='store_true')
+parser.add_argument('--rej', action='store_true')
 parser.add_argument('--adam', action='store_true')
 parser.add_argument('--vis_mode', type=str, default='tensorboard', help='one of [tensorboard, plt, wandb]')
 parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [tinyImgNet, tinyImgNetZip, COCO]')
@@ -32,7 +34,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #     img_size = 256
 #     num_epoch=16
 #     lr = 0.01
-#     using_vae = True
+#     vae = True
 #     vis_mode = 'wandb'
 #     dataset = 'tinyImgNet'
 #     param_path = 'models/'
@@ -52,7 +54,10 @@ if __name__=='__main__':
     ##  Model  ##
     #############
 
-    model = get_model(using_vae=args.using_vae).to(device)
+    model = get_model(vae=args.vae, rej=args.rej).to(device)
+
+    if args.resume:
+        model.load_state_dict(torch.load(args.resume), strict=False)
 
     if args.adam:
         optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
