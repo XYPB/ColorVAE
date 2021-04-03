@@ -35,16 +35,9 @@ class Decoder(nn.Module):
             nn.Unflatten(1, (2048, 1, 1))
         )
         self.out =nn.Sequential(
-            nn.Conv2d(256, 128, 3, 1, 1),
-            nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 64, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(64, 32, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(32, 2*2, 3, 1, 1),
+            nn.Conv2d(256, 2*2, 3, 1, 1),
+            nn.UpsamplingBilinear2d(scale_factor=4)
         )
 
     def get_l_feat(self, l):
@@ -63,7 +56,10 @@ class VAE(Distribution):
         r18 = resnet18(True)
         r18.conv1.reset_parameters()
         r18.bn1.reset_parameters()
-        self.c_backbone = IntermediateLayerGetter(r18, {'avgpool': 'out'})
+        self.c_backbone = nn.Sequential(
+            nn.AdaptiveAvgPool2d((64, 64)),
+            IntermediateLayerGetter(r18, {'avgpool': 'out'})
+        )
 
         self.prior = prior
         self.vae = vae
