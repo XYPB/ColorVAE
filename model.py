@@ -121,7 +121,7 @@ class RejVAE(VAE):
         G = 2 * G.detach() - G
         prior = self.sampler.probs(context=self.c_backbone(torch.cat([l, G], 1))['out']).mean()
         self.rej_prob = 1 - prior.detach()
-        log_prior = torch.log(prior)
+        log_prior = torch.log(prior + 1e-2)
         return super().log_prob(x, l, c_feat=c_feat, l_feat=l_feat) + posterior.log() - log_prior
 
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
