@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from survae.distributions import StandardNormal, ConditionalNormal, ConditionalBernoulli, Distribution
 from survae.utils import sum_except_batch
 from torch.distributions import Normal
-from torchvision.models import resnet50
+from torchvision.models import resnet50, resnet18
 from torchvision.models._utils import IntermediateLayerGetter
 
 
@@ -113,18 +113,9 @@ class VAE(Distribution):
 class RejVAE(VAE):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__(prior, latent_size, vae)
-        self.sampler = ConditionalBernoulli(nn.Sequential(
-            nn.Conv2d(3, 4, 3, 2, 1), nn.BatchNorm2d(4), nn.ReLU(),
-            nn.Conv2d(4, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
-            nn.Conv2d(8, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
-            nn.Conv2d(16, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
-            nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
-            nn.Linear(64, 512, 1), nn.ReLU(),
-            nn.Linear(512, 256, 1), nn.ReLU(),
-            nn.Linear(256, 1, 1), nn.Flatten()
-        ))
+        r18 = resnet18(True)
+        r18.fc = nn.Linear(512, 1)
+        self.sampler = ConditionalBernoulli(r18)
         self.register_buffer('rej_prob', torch.tensor(0.5))
 
     def log_prob(self, x, l):

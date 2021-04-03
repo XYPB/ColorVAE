@@ -30,15 +30,18 @@ parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [t
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # class ARGS:
-#     batch_size = 64
-#     img_size = 256
-#     num_epoch=16
-#     lr = 0.01
-#     vae = True
-#     vis_mode = 'wandb'
-#     dataset = 'tinyImgNet'
-#     param_path = 'models/'
-#     exp_name = 'vae'
+#     def __init__(self):
+#         self.batch_size = 64
+#         self.img_size = 64
+#         self.num_epoch = 64
+#         self.lr = 0.01
+#         self.vae = True
+#         self.rej = True
+#         self.vis_mode = 'wandb'
+#         self.dataset = 'tinyImgNetZip'
+#         self.param_path = 'models/'
+#         self.exp_name = 'vae'
+#         self.adam = False
 
 if __name__=='__main__':
     ############
@@ -106,7 +109,7 @@ if __name__=='__main__':
             elif args.vis_mode == 'wandb':
                 logs = {"Train/nll": loss}
                 if args.rej:
-                    logs.update({"Train/rej", model.rej_prob})
+                    logs.update({"Train/rej": model.rej_prob})
                 wandb.log(logs)
             gIter += 1
 
