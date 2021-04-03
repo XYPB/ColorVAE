@@ -137,7 +137,7 @@ class RejVAE(VAE):
         log_prior = torch.log(prior)
         return super().log_prob(x, l, l_feat=l_feat) + posterior.log() - log_prior
 
-def get_model(pretrained_backbone=True, vae=True, rej=True) -> nn.Module:
+def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
     prior = StandardNormal((2,))
     Model = RejVAE if rej else VAE
     return Model(prior, 2, vae=vae)

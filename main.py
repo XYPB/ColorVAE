@@ -101,8 +101,13 @@ if __name__=='__main__':
             pbar.set_description_str(f"Epoch {epoch}, nll {cum_loss / (i+1):.4f}")
             if args.vis_mode == 'tensorboard':
                 writer.add_scalar("Train/nll", loss, gIter)
+                if args.rej:
+                    writer.add_scalar("Train/rej", model.rej_prob, gIter)
             elif args.vis_mode == 'wandb':
-                wandb.log({"Train/nll": loss})
+                logs = {"Train/nll": loss}
+                if args.rej:
+                    logs.update({"Train/rej", model.rej_prob})
+                wandb.log(logs)
             gIter += 1
 
         model.eval()
