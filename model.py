@@ -56,49 +56,39 @@ class Decoder(nn.Module):
         x = self.backbone.classifier(x)
         return self.out(x)
 
-class Encoder(nn.Module):
-    def __init__(self, latent_size):
-        super().__init__()
-        self.head = nn.Sequential(
-            nn.Linear(64, 256), nn.ReLU(),
-            nn.Linear(256, latent_size*2))
-        self.backbone = nn.Sequential(
-            nn.Conv2d(3, 4, 3, 2, 1), nn.BatchNorm2d(4), nn.ReLU(),
-            nn.Conv2d(4, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
-            nn.Conv2d(8, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
-            nn.Conv2d(16, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
-            nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
-            nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten())
-
-    def get_c_feat(self, x):
-        return self.backbone(x)
-    
-    def forward(self, x):
-        return self.head(x)
-
 class VAE(Distribution):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__()
+
+        r18 = resnet18(True)
+        r18.conv1.reset_parameters()
+        r18.bn1.reset_parameters()
+        self.c_backbone = IntermediateLayerGetter(r18, {'avgpool': 'out'})
+
         self.prior = prior
         self.vae = vae
-        self.encoder = ConditionalNormal(Encoder(latent_size))
+        self.encoder = ConditionalNormal(nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(256, latent_size*2)
+        ))
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
-        self.c_backbone = self.encoder.net.get_c_feat
         self.l_backbone = self.decoder.net.get_l_feat
 
     def log_prob(self, x, l, c_feat=None, l_feat=None):
         if self.vae:
             if c_feat is None:
                 raw = torch.cat([l, x], 1)
-                c_feat = self.c_backbone(raw)
-            z, log_qz = self.encoder.sample_with_log_prob(context=c_feat)
+                c_feat = self.c_backbone(raw)['out']
+            q_dist = self.encoder.cond_dist(context=c_feat)
+            z = q_dist.sample()
         else:
-            z = self.prior.sample(x.size(0))
-            log_qz = self.prior.log_prob(z)
+            q_dist = self.prior
+            z = q_dist.sample(x.size(0))
         if l_feat is None:
             l_feat = self.l_backbone(l)
         log_px = self.decoder.log_prob(x, context=(z, l_feat))
-        return self.prior.log_prob(z) + log_px - log_qz
+        return log_px - self.kld(q_dist)
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
@@ -112,11 +102,16 @@ class VAE(Distribution):
             l_feat = self.l_backbone(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
+    
+    def kld(self, q:torch.distributions.Normal):
+        kld = 0.5 * torch.sum(1 + 2 * q.scale.log() - q.loc.pow(2) - q.scale.pow(2))
+        return sum_except_batch(kld)
 
 class RejVAE(VAE):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__(prior, latent_size, vae)
         self.sampler = ConditionalBernoulli(nn.Sequential(
+            nn.Flatten(),
             nn.Linear(512, 256), nn.ReLU(),
             nn.Linear(256, 1)
         ))
@@ -124,12 +119,12 @@ class RejVAE(VAE):
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
-        c_feat = self.c_backbone(raw)
+        c_feat = self.c_backbone(raw)['out']
         posterior = self.sampler.probs(context=c_feat).flatten()
         l_feat = self.l_backbone(l)
         G = super().sample(l, l_feat=l_feat)
         G = 2 * G.detach() - G
-        prior = self.sampler.probs(context=self.c_backbone(torch.cat([l, G], 1))).mean()
+        prior = self.sampler.probs(context=self.c_backbone(torch.cat([l, G], 1))['out']).mean()
         self.rej_prob = 1 - prior.detach()
         log_prior = torch.log(prior + 1e-2)
         return super().log_prob(x, l, c_feat=c_feat, l_feat=l_feat) + posterior.log() - log_prior
