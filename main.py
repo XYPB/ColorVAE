@@ -29,6 +29,31 @@ parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [t
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+def log_img(model, args, wandb, writer):
+    model.eval()
+    with torch.no_grad():
+        lab = torch.cat([X_test, model.sample(X_test)], 1)
+        img = reconstruct(lab)
+        if args.vis_mode == 'tensorboard':
+            writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
+        elif args.vis_mode == 'wandb':
+            wandb.log({'result': [wandb.Image(i) for i in img]})
+        else:
+            save_plt_img(img, title='result')
+
+        l = lab[:1, 0].repeat(64, 1, 1, 1)
+        z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
+        z = torch.stack(z, -1).flatten(0, 1).to(device)
+        lab = torch.cat([l, model.transform(z, l)], 1)
+        img = reconstruct(lab)
+        if args.vis_mode == 'tensorboard':
+            writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
+        elif args.vis_mode == 'wandb':
+            wandb.log({'sample':[wandb.Image(i) for i in img]})
+        else:
+            save_plt_img(img, title='sample')
+    model.train()
+
 # class ARGS:
 #     def __init__(self):
 #         self.batch_size = 64
@@ -42,6 +67,8 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #         self.param_path = 'models/'
 #         self.exp_name = 'vae'
 #         self.adam = False
+
+log_iters = [1, 10, 100, 1000]
 
 if __name__=='__main__':
     ############
@@ -76,11 +103,13 @@ if __name__=='__main__':
     if args.vis_mode == 'tensorboard':
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(flush_secs=30)
+        wandb = None
     elif args.vis_mode == 'wandb':
         import wandb
         wandb.init(project='colorvae')
         wandb.config.update(args)
         wandb.watch(model)
+        writer = None
     gIter = 0
 
     X_test, y_test = next(iter(va_loader))
@@ -111,6 +140,8 @@ if __name__=='__main__':
                 if args.rej:
                     logs.update({"Train/rej": model.rej_prob})
                 wandb.log(logs)
+            if gIter in log_iters:
+                log_img(model, args, wandb, writer)
             gIter += 1
 
         model.eval()
@@ -127,27 +158,7 @@ if __name__=='__main__':
             writer.add_scalar("Val/nll", cum_loss / len(va_loader), gIter)
         elif args.vis_mode == 'wandb':
             wandb.log({"Val/nll": cum_loss / len(va_loader)})
-
-        with torch.no_grad():
-            lab = torch.cat([X_test, model.sample(X_test)], 1)
-            img = reconstruct(lab)
-            if args.vis_mode == 'tensorboard':
-                writer.add_images("result", img.transpose(0, 3, 1, 2), gIter)
-            elif args.vis_mode == 'wandb':
-                wandb.log({'result': [wandb.Image(i) for i in img]})
-            else:
-                save_plt_img(img, title='result')
-
-            l = lab[:1, 0].repeat(64, 1, 1, 1)
-            z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
-            z = torch.stack(z, -1).flatten(0, 1).to(device)
-            lab = torch.cat([l, model.transform(z, l)], 1)
-            img = reconstruct(lab)
-            if args.vis_mode == 'tensorboard':
-                writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
-            elif args.vis_mode == 'wandb':
-                wandb.log({'sample':[wandb.Image(i) for i in img]})
-            else:
-                save_plt_img(img, title='sample')
+        
+        log_img(model, args, wandb, writer)
 
         torch.save(model.state_dict(), os.path.join(args.param_path, args.exp_name+'_model.pt'))
