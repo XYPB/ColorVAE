@@ -104,7 +104,7 @@ class VAE(Distribution):
         return x
     
     def kld(self, q:torch.distributions.Normal):
-        kld = 0.5 * torch.sum(1 + 2 * q.scale.log() - q.loc.pow(2) - q.scale.pow(2))
+        kld = -0.5 * (1 + 2 * q.scale.log() - q.loc.pow(2) - q.scale.pow(2))
         return sum_except_batch(kld)
 
 class RejVAE(VAE):
