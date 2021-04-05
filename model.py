@@ -88,15 +88,14 @@ class VAE(Distribution):
             if c_feat is None:
                 raw = torch.cat([l, x], 1)
                 c_feat = self.c_backbone(raw)
-            q_dist = self.encoder.cond_dist(context=c_feat)
-            z = q_dist.sample()
+            z, log_qz = self.encoder.sample_with_log_prob(context=c_feat)
         else:
-            q_dist = self.prior
-            z = q_dist.sample(x.size(0))
+            z = self.prior.sample(x.size(0))
+            log_qz = self.prior.log_prob(z)
         if l_feat is None:
             l_feat = self.l_backbone(l)
         log_px = self.decoder.log_prob(x, context=(z, l_feat))
-        return log_px - self.kld(q_dist)
+        return self.prior.log_prob(z) + log_px - log_qz
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
@@ -110,10 +109,7 @@ class VAE(Distribution):
             l_feat = self.l_backbone(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
-    
-    def kld(self, q:torch.distributions.Normal):
-        kld = -0.5 * (1 + 2 * q.scale.log() - q.loc.pow(2) - q.scale.pow(2))
-        return sum_except_batch(kld)
+
 
 class RejVAE(VAE):
     def __init__(self, prior, latent_size=20, vae=True):
