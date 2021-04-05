@@ -41,13 +41,13 @@ class Decoder(nn.Module):
         )
 
         self.head =nn.Sequential(
-            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.Conv2d(256, 128, 1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(256, 128, 3, 1, 1),
+            nn.Conv2d(128, 64, 3, 1, 1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 2*2, 3, 1, 1),
+            nn.Conv2d(64, 2*2, 3, 1, 1),
         )
 
     def get_l_feat(self, l):
