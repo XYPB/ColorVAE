@@ -51,7 +51,7 @@ class Decoder(nn.Module):
         )
 
     def get_l_feat(self, l):
-        return map(self.backbone(l).get, [f"x{i}" for i in range(1, 5)])
+        return list(map(self.backbone(l).get, [f"x{i}" for i in range(1, 5)]))
 
     def forward(self, context):
         z, (x1, x2, x3, x4) = context
