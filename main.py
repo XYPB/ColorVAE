@@ -30,7 +30,6 @@ parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [t
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def log_img(model, args, wandb, writer):
-    model.eval()
     with torch.no_grad():
         lab = torch.cat([X_test, model.sample(X_test)], 1)
         img = reconstruct(lab)
@@ -52,7 +51,6 @@ def log_img(model, args, wandb, writer):
             wandb.log({'sample':[wandb.Image(i) for i in img]})
         else:
             save_plt_img(img, title='sample')
-    model.train()
 
 # class ARGS:
 #     def __init__(self):
@@ -144,7 +142,7 @@ if __name__=='__main__':
                 log_img(model, args, wandb, writer)
             gIter += 1
 
-        model.eval()
+        # model.eval()
         with torch.no_grad():
             cum_loss = 0.0
             pbar = tqdm(va_loader)
@@ -158,7 +156,7 @@ if __name__=='__main__':
             writer.add_scalar("Val/nll", cum_loss / len(va_loader), gIter)
         elif args.vis_mode == 'wandb':
             wandb.log({"Val/nll": cum_loss / len(va_loader)})
-        
+
         log_img(model, args, wandb, writer)
 
         torch.save(model.state_dict(), os.path.join(args.param_path, args.exp_name+'_model.pt'))
