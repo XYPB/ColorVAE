@@ -6,7 +6,7 @@ from survae.distributions import StandardNormal, ConditionalNormal, ConditionalB
 from survae.utils import sum_except_batch
 from torch.distributions import Normal
 from torchvision.models import resnet50, resnet18
-from torchvision.models.segmentation import deeplabv3
+from torchvision.models.segmentation import fcn
 from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.utils import load_state_dict_from_url
 
@@ -21,9 +21,25 @@ class Decoder(nn.Module):
         super().__init__()
         backbone = resnet50(False, replace_stride_with_dilation=[False, True, True])
         backbone = IntermediateLayerGetter(backbone, {"layer4": "out"})
-        classifier = nn.Sequential(deeplabv3.ASPP(2048, [12, 24, 36]))
-        self.backbone = deeplabv3.DeepLabV3(backbone, classifier, None)
-        self.backbone.load_state_dict(load_state_dict_from_url('https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth', progress=True), strict=False)
+        classifier = nn.Sequential(
+            nn.Conv2d(2048, 512, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(512, 128, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(128, 32, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(32, 2*2, 3, 1, 1),
+        )
+        self.backbone = fcn.FCN(backbone, classifier, None)
+        state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
+        state_dict.pop('classifier.4.weight')
+        self.backbone.load_state_dict(state_dict, strict=False)
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
         for p in self.backbone.backbone.parameters():
@@ -34,18 +50,6 @@ class Decoder(nn.Module):
             nn.Linear(512, 2048),
             nn.Unflatten(1, (2048, 1, 1))
         )
-        self.out =nn.Sequential(
-            nn.Conv2d(256, 128, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 64, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(64, 32, 3, 1, 1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(32, 2*2, 3, 1, 1),
-        )
 
     def get_l_feat(self, l):
         return self.backbone.backbone(l)["out"]
@@ -53,8 +57,7 @@ class Decoder(nn.Module):
     def forward(self, context):
         z, l = context
         x = l + self.decode(z)
-        x = self.backbone.classifier(x)
-        return self.out(x)
+        return self.backbone.classifier(x)
 
 class Encoder(nn.Module):
     def __init__(self, latent_size):
