@@ -42,9 +42,8 @@ class Decoder(nn.Module):
         self.backbone.load_state_dict(state_dict, strict=False)
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
-        # self.backbone.backbone.eval()
-        # for p in self.backbone.backbone.parameters():
-        #     p.requires_grad = False
+        for p in self.backbone.backbone.parameters():
+            p.requires_grad = False
 
         self.decode = nn.Sequential(
             nn.Linear(latent_size, 512), nn.ReLU(),
@@ -59,6 +58,10 @@ class Decoder(nn.Module):
         z, l = context
         x = l + self.decode(z)
         return self.backbone.classifier(x)
+
+    def train(self, mode):
+        super().train(mode)
+        self.backbone.backbone.eval()
 
 class Encoder(nn.Module):
     def __init__(self, latent_size):
