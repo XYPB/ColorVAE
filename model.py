@@ -40,9 +40,14 @@ class Decoder(nn.Module):
             nn.Unflatten(1, (256, 1, 1))
         )
 
-        self.out =nn.Sequential(
-            nn.Conv2d(256, 2*2, 3, 1, 1),
-            nn.UpsamplingBilinear2d(scale_factor=4)
+        self.head =nn.Sequential(
+            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(256, 128, 3, 1, 1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(128, 2*2, 3, 1, 1),
         )
 
     def get_l_feat(self, l):
@@ -59,7 +64,7 @@ class Decoder(nn.Module):
         z3 = self.up3((x3 + F.interpolate(z4, scale_factor=2)) / 2)
         z2 = self.up2((x2 + F.interpolate(z3, scale_factor=2)) / 2)
         z1 = self.up2((x1 + F.interpolate(z2, scale_factor=2)) / 2)
-        return self.out(z1.relu())
+        return self.head(z1.relu())
 
 class Encoder(nn.Module):
     def __init__(self, latent_size):
