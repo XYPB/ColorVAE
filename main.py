@@ -118,7 +118,7 @@ if __name__=='__main__':
     for epoch in range(args.num_epoch):
         cum_loss = 0.0
         pbar = tqdm(tr_loader)
-        model.train()
+        # model.train()
         for i, (l, ab) in enumerate(pbar):
             l = l.to(device)
             ab = ab.to(device)
