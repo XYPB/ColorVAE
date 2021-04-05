@@ -70,15 +70,18 @@ class Encoder(nn.Module):
     def __init__(self, latent_size):
         super().__init__()
         self.head = nn.Sequential(
-            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(64, 256), nn.ReLU(),
             nn.Linear(256, latent_size*2))
-        r18 = resnet18(True)
-        r18.conv1.reset_parameters()
-        r18.bn1.reset_parameters()
-        self.backbone = IntermediateLayerGetter(r18, {'avgpool': 'out'})
+        self.backbone = nn.Sequential(
+            nn.Conv2d(3, 4, 3, 2, 1), nn.BatchNorm2d(4), nn.ReLU(),
+            nn.Conv2d(4, 8, 3, 2, 1), nn.BatchNorm2d(8), nn.ReLU(),
+            nn.Conv2d(8, 16, 3, 2, 1), nn.BatchNorm2d(16), nn.ReLU(),
+            nn.Conv2d(16, 32, 3, 2, 1), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.Conv2d(32, 64, 3, 2, 1), nn.BatchNorm2d(64), nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),nn.Flatten())
 
     def get_c_feat(self, x):
-        return self.backbone(x)['out'].flatten(1)
+        return self.backbone(x).flatten(1)
 
     def forward(self, x):
         return self.head(x)
@@ -125,7 +128,7 @@ class RejVAE(VAE):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__(prior, latent_size, vae)
         self.sampler = ConditionalBernoulli(nn.Sequential(
-            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(64, 256), nn.ReLU(),
             nn.Linear(256, 1)
         ))
         self.register_buffer('rej_prob', torch.tensor(0.5))
