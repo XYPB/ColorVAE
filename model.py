@@ -72,10 +72,10 @@ class Decoder(nn.Module):
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.sum(1, keepdims=True)
 
     def get_feat(self, l):
-        x = self.conv1(l)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+        x = self.backbone.backbone.conv1(l)
+        x = self.backbone.backbone.bn1(x)
+        x = self.backbone.backbone.relu(x)
+        x = self.backbone.backbone.maxpool(x)
         return x
 
     def forward(self, context):
