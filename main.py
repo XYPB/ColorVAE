@@ -134,11 +134,11 @@ if __name__=='__main__':
             if args.vis_mode == 'tensorboard':
                 writer.add_scalar("Train/nll", loss, gIter)
                 if args.rej:
-                    writer.add_scalar("Train/rej", model.rej_prob, gIter)
+                    writer.add_scalar("Train/rej", model.module.rej_prob, gIter)
             elif args.vis_mode == 'wandb':
                 logs = {"Train/nll": loss}
                 if args.rej:
-                    logs.update({"Train/rej": model.rej_prob})
+                    logs.update({"Train/rej": model.module.rej_prob})
                 wandb.log(logs)
             if gIter in log_iters:
                 log_img(model, args, wandb, writer)
