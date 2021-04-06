@@ -21,6 +21,7 @@ parser.add_argument('--img_size', type=int, default=256)
 parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--resume', type=str, default='')
 parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--warmup', type=float, default=5000)
 parser.add_argument('--vae', action='store_true')
 parser.add_argument('--rej', action='store_true')
 parser.add_argument('--adam', action='store_true')
@@ -91,7 +92,7 @@ if __name__=='__main__':
         optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     else:
         optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
-    sched = LinearWarmupScheduler(optim, 1000, [
+    sched = LinearWarmupScheduler(optim, args.warmup, [
         args.num_epoch * 7 * len(tr_loader) // 10, args.num_epoch * 9 * len(tr_loader) // 10])
 
     ###############
