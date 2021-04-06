@@ -67,7 +67,7 @@ def log_img(model, args, wandb, writer):
 #         self.exp_name = 'vae'
 #         self.adam = False
 
-log_iters = [10, 100, 1000]
+log_iters = [25, 50, 100, 200, 400, 800, 1600]
 
 if __name__=='__main__':
     ############
