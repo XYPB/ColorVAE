@@ -30,12 +30,7 @@ class LatentResnet(nn.ModuleDict):
         )
 
     def forward(self, context):
-        z, l = context
-        x = self.conv1(l)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
+        z, x = context
         x = x + self.decode(z)
 
         x = self.layer1(x)
@@ -77,7 +72,11 @@ class Decoder(nn.Module):
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.sum(1, keepdims=True)
 
     def get_feat(self, l):
-        return l
+        x = self.conv1(l)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        return x
 
     def forward(self, context):
         x = self.backbone.backbone(context)
