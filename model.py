@@ -74,7 +74,7 @@ class Decoder(nn.Module):
         state_dict.pop('classifier.4.weight')
         self.backbone.load_state_dict(state_dict, strict=False)
         self.backbone.backbone.conv1.in_channels = 1
-        self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
+        self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.sum(1, keepdims=True)
 
     def get_l_feat(self, l):
         return l
