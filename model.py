@@ -28,8 +28,6 @@ class LatentResnet(nn.ModuleDict):
             nn.Linear(256, 64),
             nn.Unflatten(1, (64, 1, 1))
         )
-        self.decode[4].weight.data.mul(0.1)
-        self.decode[4].bias.data.mul(0.1)
 
     def forward(self, context):
         z, l = context
@@ -78,7 +76,7 @@ class Decoder(nn.Module):
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.mean(1, keepdims=True)
 
-    def get_l_feat(self, l):
+    def get_feat(self, l):
         return l
 
     def forward(self, context):
@@ -94,7 +92,7 @@ class Encoder(nn.Module):
         r18.bn1.reset_parameters()
         self.backbone = IntermediateLayerGetter(r18, {'avgpool': 'out'})
 
-    def get_c_feat(self, x):
+    def get_feat(self, x):
         return self.backbone(x)['out'].flatten(1)
 
     def forward(self, x):
@@ -107,33 +105,31 @@ class VAE(Distribution):
         self.vae = vae
         self.encoder = ConditionalNormal(Encoder(latent_size))
         self.decoder = ConditionalNormalMean(Decoder(latent_size), split_dim=1)
-        self.c_backbone = self.encoder.net.get_c_feat
-        self.l_backbone = self.decoder.net.get_l_feat
 
     def log_prob(self, x, l, c_feat=None, l_feat=None):
         if self.vae:
             if c_feat is None:
                 raw = torch.cat([l, x], 1)
-                c_feat = self.c_backbone(raw)
+                c_feat = self.self.encoder.net.get_feat(raw)
             z, log_qz = self.encoder.sample_with_log_prob(context=c_feat)
         else:
             z = self.prior.sample(x.size(0))
             log_qz = self.prior.log_prob(z)
         if l_feat is None:
-            l_feat = self.l_backbone(l)
+            l_feat = self.self.decoder.net.get_feat(l)
         log_px = self.decoder.log_prob(x, context=(z, l_feat))
         return self.prior.log_prob(z) + log_px - log_qz
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
         if l_feat is None:
-            l_feat = self.l_backbone(l)
+            l_feat = self.self.decoder.net.get_feat(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
 
     def transform(self, z, l, l_feat=None):
         if l_feat is None:
-            l_feat = self.l_backbone(l)
+            l_feat = self.self.decoder.net.get_feat(l)
         x = self.decoder.sample(context=(z, l_feat))
         return x
 
@@ -146,12 +142,12 @@ class RejVAE(VAE):
 
     def log_prob(self, x, l):
         raw = torch.cat([l, x], 1)
-        c_feat = self.c_backbone(raw)
+        c_feat = self.self.encoder.net.get_feat(raw)
         posterior = self.sampler.probs(context=c_feat).flatten()
-        l_feat = self.l_backbone(l)
+        l_feat = self.self.decoder.net.get_feat(l)
         G = super().sample(l, l_feat=l_feat)
         G = 2 * G.detach() - G
-        prior = self.sampler.probs(context=self.c_backbone(torch.cat([l, G], 1))).mean()
+        prior = self.sampler.probs(context=self.self.encoder.net.get_feat(torch.cat([l, G], 1))).mean()
         self.rej_prob = 1 - prior.detach()
         log_prior = torch.log(prior + 1e-2)
         return super().log_prob(x, l, c_feat=c_feat, l_feat=l_feat) + posterior.log() - log_prior

@@ -84,6 +84,7 @@ if __name__=='__main__':
     #############
 
     model = get_model(vae=args.vae, rej=args.rej).to(device)
+    model = DataParallelDistribution(model)
 
     if args.resume:
         model.load_state_dict(torch.load(args.resume), strict=False)
