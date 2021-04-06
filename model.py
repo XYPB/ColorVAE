@@ -28,6 +28,8 @@ class LatentResnet(nn.ModuleDict):
             nn.Linear(256, 64),
             nn.Unflatten(1, (64, 1, 1))
         )
+        self.decode[4].weight.data.mul(0.1)
+        self.decode[4].bias.data.mul(0.1)
 
     def forward(self, context):
         z, l = context
