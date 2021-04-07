@@ -54,15 +54,8 @@ class Decoder(nn.Module):
             nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(512, 128, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 32, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(32, 2*2, 3, 1, 1),
+            nn.Conv2d(512, 2*2, 3, 1, 1),
+            nn.UpsamplingBilinear2d(scale_factor=4),
         )
         self.backbone = fcn.FCN(LatentResnet(backbone, 2), classifier, None)
         state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
