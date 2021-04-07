@@ -128,6 +128,7 @@ def save_pred(img_orig, img_pred, output_path):
     plt.imshow(img_orig[0])
     plt.title('Original')
 
+    assert(img_pred[0].mean() != img_pred[1].mean())
     for i in range(3, 3+N):
         plt.subplot(1, N + 2, i)
         plt.imshow(img_pred[i-3])
