@@ -6,3 +6,5 @@ model.pt
 .vscode/*
 models/*
 wandb/*
+coco/train2017/*
+coco/val2017/*
