@@ -102,3 +102,35 @@ def save_plt_img(imgs, title=None, n_rows=8):
     if title is not None: print(title)
     plt.imsave("im.jpg", img)
     display(kaggleImage("im.jpg", width=1024))
+
+
+def preprocess(img_name, img_size=256):
+    img = Image.open(img_name).convert('RGB')
+    trans = transforms.Compose([
+        transforms.Resize(img_size),
+        transforms.RandomCrop((img_size, img_size)),
+    ])
+    img = trans(img)
+    lab = (rgb2lab(img) - mean) / std
+    l, ab = lab[None, None, ..., 0], lab[None, ..., 1:].transpose(0, 3, 1, 2)
+    return l, ab
+
+def save_pred(img_orig, img_pred, output_path):
+    import matplotlib.pyplot as plt
+    N, C, H, W = img_pred.shape
+    gray = img_orig[0, ..., 0]
+    plt.figure(figsize=(8 * N, 6))
+    plt.subplot(1, N + 2, 1)
+    plt.imshow(gray, cmap='gray')
+    plt.title('Gray')
+
+    plt.subplot(1, N + 2, 2)
+    plt.imshow(img_orig[0])
+    plt.title('Original')
+
+    for i in range(3, 3+N):
+        plt.subplot(1, N + 2, i)
+        plt.imshow(img_pred[i-3])
+        plt.title(f'sample {i-2}')
+    
+    plt.savefig(output_path, dpi=300)
