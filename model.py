@@ -60,6 +60,7 @@ class Decoder(nn.Module):
         self.backbone = fcn.FCN(LatentResnet(backbone, 2), classifier, None)
         state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
         state_dict.pop('classifier.4.weight')
+        state_dict.pop('classifier.4.bias')
         self.backbone.load_state_dict(state_dict, strict=False)
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.sum(1, keepdims=True)
@@ -114,7 +115,6 @@ class VAE(Distribution):
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
-        print(z)
         if l_feat is None:
             l_feat = self.decoder.net.get_feat(l)
         x = self.decoder.sample(context=(z, l_feat))
