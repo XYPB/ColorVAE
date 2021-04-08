@@ -125,13 +125,13 @@ def save_pred(img_orig, img_pred, output_path):
     plt.title('Gray')
 
     plt.subplot(1, N + 2, 2)
-    plt.imshow(img_orig[0])
+    plt.imshow(img_orig[0], vmin=0, vmax=255)
     plt.title('Original')
 
     assert(img_pred[0].mean() != img_pred[1].mean())
     for i in range(3, 3+N):
         plt.subplot(1, N + 2, i)
-        plt.imshow(img_pred[i-3])
+        plt.imshow(img_pred[i-3], vmin=0, vmax=255)
         plt.title(f'sample {i-2}')
     
     plt.savefig(output_path, dpi=300)
