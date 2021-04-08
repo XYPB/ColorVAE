@@ -8,3 +8,4 @@ models/*
 wandb/*
 coco/train2017/*
 coco/val2017/*
+samples/
