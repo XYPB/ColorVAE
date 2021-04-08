@@ -28,6 +28,7 @@ if __name__ == '__main__':
     #############
     args = parser.parse_args()
     l, ab = preprocess(args.img_path, img_size=args.img_size)
+    img_name = args.img_path.split('/')[-1]
     torch.manual_seed(442)
 
     #############
@@ -55,4 +56,4 @@ if __name__ == '__main__':
         img_pred = reconstruct(lab_pred)
         assert(img_pred[0].mean() != img_pred[1].mean())
 
-        save_pred(img_orig, img_pred, os.path.join(args.output_dir, "sample.png"))
+        save_pred(img_orig, img_pred, os.path.join(args.output_dir, 'pred_'+img_name))
