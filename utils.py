@@ -5,7 +5,7 @@ import torch.nn.functional as F
 def get_metrics(y_pred, y_true):
     '''
     Calculate the metrics of gt and prediction in ab space.
-    Both of shape NxHxWx3
+    Both of shape NxHxWx3 in RGB
     '''
     N, H, W, _ = y_pred.shape
     y_pred = y_pred.repeat(N,1,1,1)
