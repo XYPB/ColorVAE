@@ -106,9 +106,11 @@ def save_plt_img(imgs, title=None, n_rows=8):
 
 def preprocess(img_name, img_size=256):
     img = Image.open(img_name).convert('RGB')
+    W, H = img.size
+    scale = float(img_size)/(min(H, W))
+    H_tar, W_tar = int(H * scale / 8) * 8, int(W * scale / 8) * 8
     trans = transforms.Compose([
-        transforms.Resize(img_size),
-        transforms.RandomCrop((img_size, img_size)),
+        transforms.Resize((H_tar, W_tar)),
     ])
     img = trans(img)
     lab = (rgb2lab(img) - mean) / std
@@ -137,4 +139,4 @@ def save_pred(img_orig, img_pred, output_path):
         plt.axis('off')
         plt.title(f'sample {i-2}')
     
-    plt.savefig(output_path, dpi=300, bbox_inches='tight',pad_inches = 0.2)
+    plt.savefig(output_path, dpi=400, bbox_inches='tight',pad_inches = 0.2)

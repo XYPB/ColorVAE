@@ -28,7 +28,7 @@ if __name__ == '__main__':
     #############
     args = parser.parse_args()
     l, ab = preprocess(args.img_path, img_size=args.img_size)
-    torch.manual_seed(0)
+    torch.manual_seed(442)
 
     #############
     ##  Model  ##
