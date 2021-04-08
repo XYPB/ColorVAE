@@ -73,13 +73,6 @@ if __name__=='__main__':
     #############
 
     model = get_model(vae=args.vae, rej=args.rej).to(device)
-    if args.fix_bn:
-        for k, v in model.named_modules():
-            if '.bn' in k:
-                v.eval()
-                for p in v.parameters():
-                    p.requires_grad = False
-        model.decoder.net.backbone.classifier[1].eval()
     model = DataParallelDistribution(model)
 
     if args.resume:
