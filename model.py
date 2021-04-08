@@ -40,6 +40,8 @@ class CustomizedResnet(nn.ModuleDict):
             if ori_out:
                 out.append(nn.UpsamplingBilinear2d(scale_factor=4))
             self.out = nn.Sequential(*out)
+        else:
+            self.fc = nn.Linear(2048 if build_fn == resnet50 else 512, out_channels)
 
     def forward(self, x):
         if self.aux_in:
@@ -88,51 +90,19 @@ class VAE(Distribution):
 class RejVAE(VAE):
     def __init__(self, prior, latent_size=20, vae=True):
         super().__init__(prior, latent_size, vae)
-        self.sampler = ConditionalBernoulli(CustomizedResnet(1, resnet18, aux_in=2))
+        self.sampler = ConditionalBernoulli(CustomizedResnet(1, resnet18, aux_in=2, fpn=False))
         self.register_buffer('rej_prob', torch.tensor(0.5))
 
     def log_prob(self, x, l):
-        raw = torch.cat([l, x], 1)
-        c = self.encoder.net.get(raw)
-        posterior = self.sampler.probs(context=c).flatten()
-        l = self.decoder.net.get(l)
-        G = super().sample(l, l=l)
-        G = 2 * G.detach() - G
-        prior = self.sampler.probs(context=self.encoder.net.get(torch.cat([l, G], 1))).mean()
+        posterior = self.sampler.probs(context=(l, F.avg_pool2d(x, 8, 8))).flatten()
+        G = super().sample(l)
+        G = 1.1 * G.detach() - 0.1 * G
+        prior = self.sampler.probs(context=(l, F.avg_pool2d(G, 8, 8))).mean()
         self.rej_prob = 1 - prior.detach()
-        log_prior = torch.log(prior + 1e-2)
-        return super().log_prob(x, l, c=c, l=l) + posterior.log() - log_prior
-
-class ConditionalGMM(ConditionalDistribution):
-    """A multivariate GMM with conditional mean and log_std."""
-
-    def __init__(self, latent_size, k):
-        super(ConditionalGMM, self).__init__()
-        self.k = k
-        self.net = CustomizedResnet(k + latent_size * 2 * k)
-
-    def cond_dist(self, context):
-        params = self.net(context)
-        N, _, H, W = params.shape
-        gamma = params[:, :self.k].permute(0, 2, 3, 1)
-        mean, log_std = torch.chunk(params[:, self.k:].view(N, -1, self.k, H, W).permute(0, 1, 3, 4, 2), chunks=2, dim=1)
-        return gamma, mean, log_std  # gamma: N, H, W, K; mean: N, d, H, W, K
-
-    def log_prob(self, x, context):
-        gamma, mean, log_std = self.cond_dist(context)
-        l = torch.distributions.Categorical(logits=gamma).logits
-        log_prob = Normal(loc=mean, scale=log_std.exp()).log_prob(x.unsqueeze(-1)).sum(1)
-        return torch.logsumexp(log_prob + l, -1).sum((1, 2))
-
-    def sample(self, context):
-        gamma, mean, log_std = self.cond_dist(context)
-        s = torch.distributions.Categorical(logits=gamma).sample().unsqueeze(-1)
-        s = s.unsqueeze(1).repeat(1, mean.shape[1], 1, 1, 1)  # s: N, d, H, W, K
-        mean = torch.gather(mean, -1, s).squeeze(-1)
-        log_std = torch.gather(log_std, -1, s).squeeze(-1)
-        return Normal(loc=mean, scale=log_std.exp()).sample()
+        log_prior = torch.log(prior + 1e-3)
+        return super().log_prob(x, l) + posterior.log() - log_prior
 
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
-    prior = ConditionalGMM(20, 8)
+    prior = ConditionalNormal(CustomizedResnet(32 * 2), 1)
     Model = RejVAE if rej else VAE
-    return Model(prior, 20, vae=vae)
+    return Model(prior, 32, vae=vae)
