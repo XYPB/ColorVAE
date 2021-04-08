@@ -25,6 +25,7 @@ parser.add_argument('--warmup', type=float, default=1000)
 parser.add_argument('--vae', action='store_true')
 parser.add_argument('--rej', action='store_true')
 parser.add_argument('--adam', action='store_true')
+parser.add_argument('--fix-bn', action='store_true')
 parser.add_argument('--vis_mode', type=str, default='tensorboard', help='one of [tensorboard, plt, wandb]')
 parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [tinyImgNet, tinyImgNetZip, COCO]')
 
@@ -41,18 +42,6 @@ def log_img(model, args, wandb, writer):
         else:
             save_plt_img(img, title='result')
 
-        l = lab[:1, 0].repeat(64, 1, 1, 1)
-        z = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
-        z = torch.stack(z, -1).flatten(0, 1).to(device)
-        lab = torch.cat([l, model.module.transform(z, l)], 1)
-        img = reconstruct(lab)
-        if args.vis_mode == 'tensorboard':
-            writer.add_images("sample", img.transpose(0, 3, 1, 2), gIter)
-        elif args.vis_mode == 'wandb':
-            wandb.log({'sample':[wandb.Image(i) for i in img]})
-        else:
-            save_plt_img(img, title='sample')
-
 # class ARGS:
 #     def __init__(self):
 #         self.batch_size = 64
@@ -67,7 +56,7 @@ def log_img(model, args, wandb, writer):
 #         self.exp_name = 'vae'
 #         self.adam = False
 
-log_iters = [25, 50, 100, 200, 400, 800, 1600]
+log_iters = [0, 25, 50, 100, 200, 400, 800, 1600]
 
 if __name__=='__main__':
     ############
@@ -84,6 +73,13 @@ if __name__=='__main__':
     #############
 
     model = get_model(vae=args.vae, rej=args.rej).to(device)
+    if args.fix_bn:
+        for k, v in model.named_modules():
+            if '.bn' in k:
+                v.eval()
+                for p in v.parameters():
+                    p.requires_grad = False
+        model.decoder.net.backbone.classifier[1].eval()
     model = DataParallelDistribution(model)
 
     if args.resume:

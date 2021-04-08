@@ -56,6 +56,24 @@ class COCO(torchvision.datasets.VisionDataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+class YANDE(torchvision.datasets.VisionDataset):
+
+    def __init__(self, root, transform=None):
+        super().__init__(root)
+        self.samples = os.listdir(root)
+        self.transform = transform
+
+    def __getitem__(self, index: int):
+        path = self.samples[index]
+        img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        if self.transform is not None:
+            img = self.transform(img)
+        lab = (rgb2lab(img) - mean) / std
+        return lab[None, ..., 0], lab[..., 1:].transpose(2, 0, 1)
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
 mean = np.array([48., 2.5, 9.2], dtype=np.float32)
 std = np.array([27., 13., 18.], dtype=np.float32)
 class ColorImageNet(torchvision.datasets.ImageFolder):
@@ -75,6 +93,9 @@ def get_data_loaders(batch_size, dataset, img_size=256):
     elif dataset == 'COCO':
         tr_loader = DataLoader(COCO("coco/train2017", "train_list.txt", _trans), batch_size, shuffle=True, num_workers=8)
         va_loader = DataLoader(COCO("coco/val2017", "val_list.txt", _trans), batch_size, num_workers=8)
+    elif dataset == 'yande':
+        tr_loader = DataLoader(YANDE("yande/train", _trans), batch_size, shuffle=True, num_workers=8)
+        va_loader = DataLoader(YANDE("yande/val", _trans), batch_size, num_workers=8)
     elif dataset == 'tinyImgNet':
         tr_loader = DataLoader(ColorImageNet("../input/tiny-imagenet/tiny-imagenet-200/train"), batch_size, shuffle=True)
         va_loader = DataLoader(ColorImageNet("../input/tiny-imagenet/tiny-imagenet-200/val"), batch_size)
