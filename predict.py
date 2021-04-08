@@ -34,20 +34,21 @@ if __name__ == '__main__':
     ##  Model  ##
     #############
     model = get_model(vae=True, rej=False).to(device)
+    model = DataParallelDistribution(model)
 
     if args.resume:
-        model.load_state_dict(torch.load(args.resume), strict=False)
+        model.load_state_dict(torch.load(args.resume), strict=True)
 
     #############
     ## predict ##
     #############
+    model.eval()
     with torch.no_grad():
         l = torch.tensor(l).to(device)
         ab = torch.tensor(ab).to(device)
         lab_orig = torch.cat([l, ab], 1)
-        lab_pred = torch.cat([torch.cat([l, model.sample(l)], 1) for i in range(args.sample_num)], 0)
+        lab_pred = torch.cat([l.repeat([args.sample_num, 1, 1, 1]), model.sample(l.repeat([args.sample_num, 1, 1, 1]))], 1)
         assert(lab_pred[0].mean() != lab_pred[1].mean())
-        print(lab_pred.shape)
         img_orig = reconstruct(lab_orig)
         img_pred = reconstruct(lab_pred)
         assert(img_pred[0].mean() != img_pred[1].mean())
