@@ -14,7 +14,7 @@ class SPP(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.out = nn.Conv2d(4*in_channels, out_channels, 1)
-        self.fc = nn.Conv2d(in_channels, out_channels, 1)
+        self.fc = nn.Conv2d(in_channels, out_channels, 1, bias=False)
     def forward(self, x):
         return self.out(torch.cat([
             x,
