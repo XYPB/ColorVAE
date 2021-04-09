@@ -28,7 +28,12 @@ class CustomizedResnet(nn.ModuleDict):
 
             self.up3 = nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1)
             self.up2 = nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1)
-            out = [nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1), nn.ReLU()]
+            out = [
+                nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1), nn.ReLU(),
+                nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1), nn.ReLU(),
+                nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1), nn.ReLU(),
+                nn.Conv2d(fpn_dim, fpn_dim, 3, 1, 1), nn.ReLU(),
+            ]
             if ori_out:
                 out.append(nn.Upsample(scale_factor=2))
             out.append(nn.Conv2d(fpn_dim, out_channels, 3, 1, 1))
@@ -98,6 +103,6 @@ class RejVAE(VAE):
         return super().log_prob(x, l) + posterior.log() - log_prior
 
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
-    prior = ConditionalNormal(CustomizedResnet(64 * 2, fpn=False), 1)
+    prior = ConditionalNormal(CustomizedResnet(64 * 2, resnet18, fpn=False), 1)
     Model = RejVAE if rej else VAE
     return Model(prior, 64, vae=vae)
