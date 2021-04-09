@@ -11,33 +11,30 @@ from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.utils import load_state_dict_from_url
 
 class SPP(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, *args):
         super().__init__()
-        self.out = nn.Conv2d(4*in_channels, out_channels, 1)
-        self.fc = nn.Conv2d(in_channels, out_channels, 1, bias=False)
+        self.out = nn.Conv2d(4*in_channels, *args)
+        self.fc = nn.Conv2d(in_channels, *args, bias=False)
     def forward(self, x):
-        return self.out(torch.cat([
+        x = self.out(torch.cat([
             x,
             F.avg_pool2d(x, 3, 1, 1) * 3,
             F.avg_pool2d(x, 7, 1, 3) * 7,
             F.avg_pool2d(x, 15, 1, 7) * 15,
         ], dim=1)) + self.fc(F.adaptive_avg_pool2d(x * x.shape[-1], (1, 1)))
+        return F.interpolate(x, scale_factor=2)
 
 
 class CustomizedResnet(nn.ModuleDict):
-    def __init__(self, out_channels=20, build_fn=resnet50, fpn=True, aux_in=0, ori_out=False):
+    def __init__(self, out_channels=20, build_fn=resnet50, fpn=True, aux_in=0, ori_out=False, spp=False):
         self.aux_in = aux_in
         self.fpn = fpn
         model = build_fn(True)
         model.conv1.in_channels = 1
         model.conv1.weight.data = model.conv1.weight.data.sum(1, keepdims=True)
-        for m in [model.conv1, model.bn1, model.layer1, model.layer2]:
-            m.eval()
-            for p in m.parameters():
-                p.requires_grad = False
         super(CustomizedResnet, self).__init__(model.named_children())
         if aux_in:
-            self.decode = SPP(aux_in, 512 if build_fn == resnet50 else 128)
+            self.decode = (SPP if spp else nn.Conv2d)(aux_in, 256 if build_fn == resnet50 else 64, 1)
         if fpn:
             fpn_dim = 256 if build_fn == resnet50 else 64
             self.out4 = nn.Conv2d(2048 if build_fn == resnet50 else 512, fpn_dim, 1)
@@ -65,8 +62,8 @@ class CustomizedResnet(nn.ModuleDict):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x2 = self.layer2(x)
-        x3 = self.layer3(x2 + self.decode(z) if self.aux_in else x2)
+        x2 = self.layer2(x + self.decode(z) if self.aux_in else x)
+        x3 = self.layer3(x2)
         x4 = self.layer4(x3)
 
         if self.fpn:
@@ -88,10 +85,10 @@ class VAE(Distribution):
         self.prior = prior
         self.vae = vae
         self.encoder = ConditionalNormal(CustomizedResnet(latent_size*2, resnet18, aux_in=2), 1)
-        self.decoder = ConditionalNormalMean(CustomizedResnet(2*2, aux_in=latent_size, ori_out=True), 1)
+        self.decoder = ConditionalNormalMean(CustomizedResnet(2*2, aux_in=latent_size, ori_out=True, spp=True), 1)
 
     def log_prob(self, x, l):
-        z, log_qz = self.encoder.sample_with_log_prob(context=(l, F.avg_pool2d(x, 8, 8)))
+        z, log_qz = self.encoder.sample_with_log_prob(context=(l, F.avg_pool2d(x, 4, 4)))
         log_px = self.decoder.log_prob(x, context=(l, z))
         return self.prior.log_prob(z, l) + log_px - log_qz
 
@@ -107,10 +104,10 @@ class RejVAE(VAE):
         self.register_buffer('rej_prob', torch.tensor(0.5))
 
     def log_prob(self, x, l):
-        posterior = self.sampler.probs(context=(l, F.avg_pool2d(x, 8, 8))).flatten()
+        posterior = self.sampler.probs(context=(l, F.avg_pool2d(x, 4, 4))).flatten()
         G = super().sample(l)
         G = 1.1 * G.detach() - 0.1 * G
-        prior = self.sampler.probs(context=(l, F.avg_pool2d(G, 8, 8))).mean()
+        prior = self.sampler.probs(context=(l, F.avg_pool2d(G, 4, 4))).mean()
         self.rej_prob = 1 - prior.detach()
         log_prior = torch.log(prior + 1e-3)
         return super().log_prob(x, l) + posterior.log() - log_prior
