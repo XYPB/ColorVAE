@@ -18,10 +18,10 @@ class SPP(nn.Module):
     def forward(self, x):
         return self.out(torch.cat([
             x,
-            F.avg_pool2d(x, 3, 1, 1),
-            F.avg_pool2d(x, 7, 1, 3),
-            F.avg_pool2d(x, 15, 1, 7),
-        ], dim=1)) + self.fc(F.adaptive_avg_pool2d(x, (1, 1)))
+            F.avg_pool2d(x, 3, 1, 1) * 3,
+            F.avg_pool2d(x, 7, 1, 3) * 7,
+            F.avg_pool2d(x, 15, 1, 7) * 15,
+        ], dim=1)) + self.fc(F.adaptive_avg_pool2d(x * x.shape[-1], (1, 1)))
 
 
 class CustomizedResnet(nn.ModuleDict):
