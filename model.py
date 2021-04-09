@@ -110,7 +110,7 @@ class ConditionalStandardNormal(StandardNormal):
         return super().log_prob(x)
 
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
-    # prior = ConditionalNormal(CustomizedResnet(2 * 2, resnet18, fpn=False), 1)
-    prior = ConditionalStandardNormal((2,))
+    prior = ConditionalNormal(CustomizedResnet(2 * 2, resnet18, fpn=False), 1)
+    # prior = ConditionalStandardNormal((2,))
     Model = RejVAE if rej else VAE
     return Model(prior, 2, vae=vae)
