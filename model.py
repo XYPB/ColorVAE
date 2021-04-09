@@ -102,8 +102,15 @@ class RejVAE(VAE):
         log_prior = torch.log(prior + 1e-3)
         return super().log_prob(x, l) + posterior.log() - log_prior
 
+class ConditionalStandardNormal(StandardNormal):
+    def sample(self, x):
+        return super().sample(x.size(0))
+    
+    def log_prob(self, x, ctx):
+        return super().log_prob(x)
+
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
     # prior = ConditionalNormal(CustomizedResnet(2 * 2, resnet18, fpn=False), 1)
-    prior = StandardNormal((2,))
+    prior = ConditionalStandardNormal((2,))
     Model = RejVAE if rej else VAE
     return Model(prior, 2, vae=vae)
