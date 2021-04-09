@@ -10,6 +10,19 @@ from torchvision.models.segmentation import fcn
 from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.utils import load_state_dict_from_url
 
+class SPP(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.out = nn.Conv2d(4*in_channels, out_channels, 1)
+        self.fc = nn.Conv2d(in_channels, out_channels, 1)
+    def forward(self, x):
+        return self.out(torch.cat([
+            x,
+            F.avg_pool2d(x, 3, 1, 1),
+            F.avg_pool2d(x, 7, 1, 3),
+            F.avg_pool2d(x, 15, 1, 7),
+        ], dim=1)) + self.fc(F.adaptive_avg_pool2d(x, (1, 1)))
+
 
 class CustomizedResnet(nn.ModuleDict):
     def __init__(self, out_channels=20, build_fn=resnet50, fpn=True, aux_in=0, ori_out=False):
@@ -24,7 +37,7 @@ class CustomizedResnet(nn.ModuleDict):
                 p.requires_grad = False
         super(CustomizedResnet, self).__init__(model.named_children())
         if aux_in:
-            self.decode = nn.Conv2d(aux_in, 512 if build_fn == resnet50 else 128, 1)
+            self.decode = SPP(aux_in, 512 if build_fn == resnet50 else 128)
         if fpn:
             fpn_dim = 256 if build_fn == resnet50 else 64
             self.out4 = nn.Conv2d(2048 if build_fn == resnet50 else 512, fpn_dim, 1)
