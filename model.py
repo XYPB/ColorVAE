@@ -103,6 +103,7 @@ class RejVAE(VAE):
         return super().log_prob(x, l) + posterior.log() - log_prior
 
 def get_model(pretrained_backbone=True, vae=True, rej=True) -> VAE:
-    prior = ConditionalNormal(CustomizedResnet(64 * 2, resnet18, fpn=False), 1)
+    # prior = ConditionalNormal(CustomizedResnet(2 * 2, resnet18, fpn=False), 1)
+    prior = StandardNormal((2,))
     Model = RejVAE if rej else VAE
-    return Model(prior, 64, vae=vae)
+    return Model(prior, 2, vae=vae)
