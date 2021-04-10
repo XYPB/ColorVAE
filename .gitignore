@@ -6,3 +6,4 @@ coco
 .vscode
 models
 wandb
+samples/*
