@@ -18,6 +18,7 @@ parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--output_dir', type=str, default='imgs_out/')
 parser.add_argument('--num_epoch', type=int, default=16)
 parser.add_argument('--img_size', type=int, default=256)
+parser.add_argument('--latent_size', type=int, default=2)
 parser.add_argument('--exp_name', type=str, default='tmp')
 parser.add_argument('--resume', type=str, default='')
 parser.add_argument('--lr', type=float, default=1e-2)
@@ -83,7 +84,7 @@ if __name__=='__main__':
     ##  Model  ##
     #############
 
-    model = get_model(vae=args.vae, rej=args.rej).to(device)
+    model = get_model(vae=args.vae, rej=args.rej, latent_size=args.latent_size).to(device)
     model = DataParallelDistribution(model)
 
     if args.resume:
@@ -120,7 +121,7 @@ if __name__=='__main__':
     for epoch in range(args.num_epoch):
         cum_loss = 0.0
         pbar = tqdm(tr_loader)
-        # model.train()
+        model.train()
         for i, (l, ab) in enumerate(pbar):
             l = l.to(device)
             ab = ab.to(device)
@@ -144,7 +145,7 @@ if __name__=='__main__':
                 log_img(model, args, wandb, writer)
             gIter += 1
 
-        # model.eval()
+        model.eval()
         with torch.no_grad():
             cum_loss = 0.0
             pbar = tqdm(va_loader)
