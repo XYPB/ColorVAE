@@ -64,7 +64,7 @@ class Decoder(nn.Module):
             nn.Upsample(scale_factor=2),
             nn.Conv2d(32, 2*2, 3, 1, 1),
         )
-        self.backbone = fcn.FCN(LatentResnet(backbone, 2), classifier, None)
+        self.backbone = fcn.FCN(LatentResnet(backbone, latent_size), classifier, None)
         state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
         state_dict.pop('classifier.4.weight')
         self.backbone.load_state_dict(state_dict, strict=False)
