@@ -106,31 +106,37 @@ def save_plt_img(imgs, title=None, n_rows=8):
 
 def preprocess(img_name, img_size=256):
     img = Image.open(img_name).convert('RGB')
+    name = img_name.split('/')[-1]
+    W, H = img.size
+    scale = float(img_size)/(min(H, W))
+    H_tar, W_tar = int(H * scale / 8) * 8, int(W * scale / 8) * 8
     trans = transforms.Compose([
-        transforms.Resize(img_size),
-        transforms.RandomCrop((img_size, img_size)),
+        transforms.Resize((H_tar, W_tar)),
     ])
     img = trans(img)
     lab = (rgb2lab(img) - mean) / std
     l, ab = lab[None, None, ..., 0], lab[None, ..., 1:].transpose(0, 3, 1, 2)
-    return l, ab
+    return l, ab, name
 
 def save_pred(img_orig, img_pred, output_path):
     import matplotlib.pyplot as plt
-    N, C, H, W = img_pred.shape
+    N, H, W, C = img_pred.shape
     gray = img_orig[0, ..., 0]
     plt.figure(figsize=(8 * N, 6))
     plt.subplot(1, N + 2, 1)
     plt.imshow(gray, cmap='gray')
+    plt.axis('off')
     plt.title('Gray')
 
     plt.subplot(1, N + 2, 2)
-    plt.imshow(img_orig[0])
+    plt.imshow(img_orig[0], vmin=0, vmax=255)
+    plt.axis('off')
     plt.title('Original')
 
     for i in range(3, 3+N):
         plt.subplot(1, N + 2, i)
-        plt.imshow(img_pred[i-3])
+        plt.imshow(img_pred[i-3], vmin=0, vmax=255)
+        plt.axis('off')
         plt.title(f'sample {i-2}')
     
-    plt.savefig(output_path, dpi=300)
+    plt.savefig(output_path, dpi=400, bbox_inches='tight',pad_inches = 0.2)
