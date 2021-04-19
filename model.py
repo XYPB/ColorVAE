@@ -121,7 +121,7 @@ class VAE(Distribution):
 
     def sample(self, l, num_samples=1, l_feat=None):
         z = self.prior.sample(l.size(0))
-        print(z)
+        # print(z)
         if l_feat is None:
             l_feat = self.decoder.net.get_feat(l)
         x = self.decoder.sample(context=(z, l_feat))
