@@ -19,6 +19,8 @@ parser.add_argument('--output_dir', type=str, default='samples/')
 parser.add_argument('--img_size', type=int, default=128)
 parser.add_argument('--resume', type=str, default='models/colorvae_dil.pt')
 parser.add_argument('--sample_num', type=int, default=5)
+parser.add_argument('--latent_size', type=int, default=2)
+parser.add_argument('--separate', action="store_true")
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -33,7 +35,8 @@ if __name__ == '__main__':
     #############
     ##  Model  ##
     #############
-    model = get_model(vae=True, rej=False).to(device)
+    model = get_model(vae=True, rej=False, latent_size=args.latent_size).to(device)
+    model = DataParallelDistribution(model)
 
     if args.resume:
         model.load_state_dict(torch.load(args.resume), strict=False)
@@ -46,10 +49,11 @@ if __name__ == '__main__':
         ab = torch.tensor(ab).to(device)
         lab_orig = torch.cat([l, ab], 1)
         lab_pred = torch.cat([torch.cat([l, model.sample(l)], 1) for i in range(args.sample_num)], 0)
-        assert(lab_pred[0].mean() != lab_pred[1].mean())
         print(lab_pred.shape)
         img_orig = reconstruct(lab_orig)
         img_pred = reconstruct(lab_pred)
-        assert(img_pred[0].mean() != img_pred[1].mean())
 
-        save_pred(img_orig, img_pred, os.path.join(args.output_dir, "sample.png"))
+        if args.separate:
+            import matplotlib.pyplot as plt
+        else:
+            save_pred(img_orig, img_pred, os.path.join(args.output_dir, "sample.png"))
