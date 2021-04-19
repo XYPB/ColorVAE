@@ -26,6 +26,7 @@ parser.add_argument('--warmup', type=float, default=1000)
 parser.add_argument('--vae', action='store_true')
 parser.add_argument('--rej', action='store_true')
 parser.add_argument('--adam', action='store_true')
+parser.add_argument('--no_pretrain', action='store_true')
 parser.add_argument('--vis_mode', type=str, default='tensorboard', help='one of [tensorboard, plt, wandb]')
 parser.add_argument('--dataset', type=str, default='tinyImgNet', help='one of [tinyImgNet, tinyImgNetZip, COCO]')
 

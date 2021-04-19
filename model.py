@@ -46,7 +46,7 @@ class ConditionalNormalMean(ConditionalNormal):
         return self.mean(context)
 
 class Decoder(nn.Module):
-    def __init__(self, latent_size=20):
+    def __init__(self, latent_size=20, pretrained_backbone=True):
         super().__init__()
         backbone = resnet50(False, replace_stride_with_dilation=[False, True, True])
         classifier = nn.Sequential(
@@ -65,9 +65,10 @@ class Decoder(nn.Module):
             nn.Conv2d(32, 2*2, 3, 1, 1),
         )
         self.backbone = fcn.FCN(LatentResnet(backbone, latent_size), classifier, None)
-        state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
-        state_dict.pop('classifier.4.weight')
-        self.backbone.load_state_dict(state_dict, strict=False)
+        if pretrained_backbone:
+            state_dict = load_state_dict_from_url('https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth', progress=True)
+            state_dict.pop('classifier.4.weight')
+            self.backbone.load_state_dict(state_dict, strict=False)
         self.backbone.backbone.conv1.in_channels = 1
         self.backbone.backbone.conv1.weight.data = self.backbone.backbone.conv1.weight.data.sum(1, keepdims=True)
 
@@ -83,10 +84,10 @@ class Decoder(nn.Module):
         return self.backbone.classifier(x)
 
 class Encoder(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, latent_size, pretrained_backbone=True):
         super().__init__()
         self.head = nn.Linear(512, latent_size*2)
-        r18 = resnet18(True)
+        r18 = resnet18(pretrained_backbone)
         r18.conv1.reset_parameters()
         r18.bn1.reset_parameters()
         self.backbone = IntermediateLayerGetter(r18, {'avgpool': 'out'})
@@ -98,7 +99,7 @@ class Encoder(nn.Module):
         return self.head(x)
 
 class VAE(Distribution):
-    def __init__(self, prior, latent_size=20, vae=True):
+    def __init__(self, prior, latent_size=20, vae=True, pretrained_backbone=True):
         super().__init__()
         self.prior = prior
         self.vae = vae
@@ -134,25 +135,6 @@ class VAE(Distribution):
         return x
 
 
-class RejVAE(VAE):
-    def __init__(self, prior, latent_size=20, vae=True):
-        super().__init__(prior, latent_size, vae)
-        self.sampler = ConditionalBernoulli(nn.Linear(512, 1))
-        self.register_buffer('rej_prob', torch.tensor(0.5))
-
-    def log_prob(self, x, l):
-        raw = torch.cat([l, x], 1)
-        c_feat = self.encoder.net.get_feat(raw)
-        posterior = self.sampler.probs(context=c_feat).flatten()
-        l_feat = self.decoder.net.get_feat(l)
-        G = super().sample(l, l_feat=l_feat)
-        G = 2 * G.detach() - G
-        prior = self.sampler.probs(context=self.encoder.net.get_feat(torch.cat([l, G], 1))).mean()
-        self.rej_prob = 1 - prior.detach()
-        log_prior = torch.log(prior + 1e-2)
-        return super().log_prob(x, l, c_feat=c_feat, l_feat=l_feat) + posterior.log() - log_prior
-
 def get_model(pretrained_backbone=True, vae=True, rej=True, latent_size=2) -> VAE:
     prior = StandardNormal((latent_size,))
-    Model = RejVAE if rej else VAE
-    return Model(prior, latent_size, vae=vae)
+    return VAE(prior, latent_size, vae=vae, pretrained_backbone=pretrained_backbone)
