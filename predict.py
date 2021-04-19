@@ -18,7 +18,7 @@ parser.add_argument('-p', '--img_path', type=str, default='')
 parser.add_argument('--output_dir', type=str, default='samples/')
 parser.add_argument('--img_size', type=int, default=256)
 parser.add_argument('--resume', type=str, default='models/colorvae_dil.pt')
-parser.add_argument('--sample_num', type=int, default=5)
+parser.add_argument('--sample_num', type=int, default=2)
 parser.add_argument('--latent_size', type=int, default=2)
 parser.add_argument('--separate', action="store_true")
 
@@ -28,7 +28,6 @@ if __name__ == '__main__':
     #############
     ##  Input  ##
     #############
-
     args = parser.parse_args()
     if os.path.isfile(args.img_path):
         target = [preprocess(args.img_path, img_size=args.img_size)]
@@ -36,6 +35,12 @@ if __name__ == '__main__':
         target = [preprocess(os.path.join(args.img_path, img), img_size=args.img_size)
                   for img in os.listdir(args.img_path)]
     torch.manual_seed(0)
+
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+        os.makedirs(os.path.join(args.output_dir, 'orig'))
+        for i in range(args.sample_num):
+            os.makedirs(os.path.join(args.output_dir, f'sample{i}'))
 
     #############
     ##  Model  ##
@@ -51,13 +56,15 @@ if __name__ == '__main__':
     ## predict ##
     #############
     model.eval()
-    for l, ab, name in target:
+    pbar = tqdm(target)
+    for l, ab, name in pbar:
+        torch.manual_seed(443)
         with torch.no_grad():
             l = torch.tensor(l).to(device)
             ab = torch.tensor(ab).to(device)
             loss = torch.tensor([-model.log_prob(ab, l).mean() /
                                  (args.img_size * args.img_size * 2) for i in range(25)]).mean()
-            print(f'Average negative likelihood(nll): {loss}')
+            pbar.set_description_str(f'Average negative likelihood(nll): {loss}')
             lab_orig = torch.cat([l, ab], 1)
             lab_pred = torch.cat([l.repeat([args.sample_num, 1, 1, 1]), model.sample(
                 l.repeat([args.sample_num, 1, 1, 1]))], 1)
@@ -67,10 +74,9 @@ if __name__ == '__main__':
             if args.separate:
                 import matplotlib.pyplot as plt
                 plt.imsave(os.path.join(args.output_dir,
-                                        'orig_' + name), img_orig[0])
+                                        'orig', name), img_orig[0])
                 for i, sample in enumerate(img_pred, 0):
                     plt.imsave(os.path.join(args.output_dir,
-                                            f'smaple{i}_' + name), sample)
-            else:
-                save_pred(img_orig, img_pred, os.path.join(
-                    args.output_dir, 'sample.png'))
+                                            f'sample{i}', name), sample)
+            save_pred(img_orig, img_pred, os.path.join(
+                args.output_dir, 'sample.png'))
