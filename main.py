@@ -43,7 +43,7 @@ def log_img(model, args, wandb, writer):
             save_plt_img(img, title='result')
 
         l = lab[:1, 0].repeat(64, 1, 1, 1)
-        z = model.module.prior.sample(1).repeat(61,1,1,1)
+        z = model.module.prior.sample(1).repeat(64,1)
         z_ = torch.meshgrid(torch.linspace(-2, 2, 8), torch.linspace(-2, 2, 8))
         z_ = torch.stack(z_, -1).flatten(0, 1).to(device)
         z[:,:2] = z_
