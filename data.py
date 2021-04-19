@@ -139,4 +139,4 @@ def save_pred(img_orig, img_pred, output_path):
         plt.axis('off')
         plt.title(f'sample {i-2}')
     
-    plt.savefig(output_path, dpi=400, bbox_inches='tight',pad_inches = 0.2)
+    plt.savefig(output_path, dpi=200, bbox_inches='tight',pad_inches = 0.2)

@@ -56,15 +56,11 @@ if __name__ == '__main__':
     ## predict ##
     #############
     model.eval()
-    pbar = tqdm(target)
-    for l, ab, name in pbar:
+    for l, ab, name in tqdm(target):
         torch.manual_seed(443)
         with torch.no_grad():
             l = torch.tensor(l).to(device)
             ab = torch.tensor(ab).to(device)
-            # loss = torch.tensor([-model.log_prob(ab, l).mean() /
-            #                      (args.img_size * args.img_size * 2) for i in range(25)]).mean()
-            # pbar.set_description_str(f'Average negative likelihood(nll): {loss}')
             lab_orig = torch.cat([l, ab], 1)
             lab_pred = torch.cat([l.repeat([args.sample_num, 1, 1, 1]), model.sample(
                 l.repeat([args.sample_num, 1, 1, 1]))], 1)
@@ -78,5 +74,6 @@ if __name__ == '__main__':
                 for i, sample in enumerate(img_pred, 0):
                     plt.imsave(os.path.join(args.output_dir,
                                             f'sample{i}', name), sample)
-            save_pred(img_orig, img_pred, os.path.join(
-                args.output_dir, 'sample.png'))
+            else:
+                save_pred(img_orig, img_pred, os.path.join(
+                    args.output_dir, 'sample.png'))
