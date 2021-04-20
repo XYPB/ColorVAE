@@ -36,13 +36,14 @@ if __name__ == '__main__':
                   for img in os.listdir(args.img_path)]
     torch.manual_seed(0)
 
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    if not os.path.exists(os.path.join(args.output_dir, 'orig')):
-        os.makedirs(os.path.join(args.output_dir, 'orig'))
-    for i in range(args.sample_num):
-        if not os.path.exists(os.path.join(args.output_dir, f'sample{i}')):
-            os.makedirs(os.path.join(args.output_dir, f'sample{i}'))
+    if args.separate:
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+        if not os.path.exists(os.path.join(args.output_dir, 'orig')):
+            os.makedirs(os.path.join(args.output_dir, 'orig'))
+        for i in range(args.sample_num):
+            if not os.path.exists(os.path.join(args.output_dir, f'sample{i}')):
+                os.makedirs(os.path.join(args.output_dir, f'sample{i}'))
 
     #############
     ##  Model  ##
