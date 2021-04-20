@@ -124,7 +124,7 @@ if __name__=='__main__':
     for epoch in range(args.num_epoch):
         cum_loss = 0.0
         pbar = tqdm(tr_loader)
-        model.train()
+        # model.train()
         for i, (l, ab) in enumerate(pbar):
             l = l.to(device)
             ab = ab.to(device)
@@ -148,7 +148,7 @@ if __name__=='__main__':
                 log_img(model, args, wandb, writer)
             gIter += 1
 
-        model.eval()
+        # model.eval()
         with torch.no_grad():
             cum_loss = 0.0
             pbar = tqdm(va_loader)
