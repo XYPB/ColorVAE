@@ -8,8 +8,7 @@ def get_metrics(y_pred, y_true):
     Both of shape NxHxWx3 in RGB
     '''
     N, H, W, _ = y_pred.shape
-    y_pred = y_pred.repeat(N,1,1,1)
-    mse = [F.mse_loss(y_pred[i], y_true[i]) for i in range(N)]
-    psnr = [10 * torch.log10(255.**2 / mse[i]) for i in range(N)]
-    return mse, psnr
+    mse = torch.tensor([F.mse_loss(torch.tensor(y_pred[i]), torch.tensor(y_true[0])) for i in range(N)])
+    psnr = 10 * torch.log10(1. / mse)
+    return mse.mean(), psnr.mean()
 

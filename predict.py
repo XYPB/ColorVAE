@@ -12,6 +12,7 @@ from survae.distributions import DataParallelDistribution
 from data import get_data_loaders, reconstruct, save_plt_img, preprocess, save_pred
 from model import get_model
 from schedular import LinearWarmupScheduler
+from utils import get_metrics
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--img_path', type=str, default='')
@@ -21,6 +22,7 @@ parser.add_argument('--resume', type=str, default='models/colorvae_dil.pt')
 parser.add_argument('--sample_num', type=int, default=2)
 parser.add_argument('--latent_size', type=int, default=2)
 parser.add_argument('--separate', action="store_true")
+parser.add_argument('--psnr', action="store_true")
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -59,7 +61,10 @@ if __name__ == '__main__':
     ## predict ##
     #############
     model.eval()
-    for l, ab, name in tqdm(target):
+    tbar = tqdm(target)
+    total_psnr = 0
+    total_mse = 0
+    for i, (l, ab, name) in enumerate(tbar, 1):
         torch.manual_seed(443)
         with torch.no_grad():
             l = torch.tensor(l).to(device)
@@ -70,7 +75,12 @@ if __name__ == '__main__':
             img_orig = reconstruct(lab_orig)
             img_pred = reconstruct(lab_pred)
 
-            if args.separate:
+            if args.psnr:
+                mse, psnr = get_metrics(img_pred, img_orig)
+                total_psnr += psnr
+                total_mse += mse
+                tbar.set_description(f'Avg. PSNR: {total_psnr/i:.4f}, Avg. MSE: {total_mse/i:.4f}')
+            elif args.separate:
                 import matplotlib.pyplot as plt
                 plt.imsave(os.path.join(args.output_dir,
                                         'orig', name), img_orig[0])
