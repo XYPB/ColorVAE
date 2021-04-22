@@ -32,10 +32,9 @@ if __name__ == '__main__':
     #############
     args = parser.parse_args()
     if os.path.isfile(args.img_path):
-        target = [preprocess(args.img_path, img_size=args.img_size)]
+        target = [args.img_path]
     elif os.path.isdir(args.img_path):
-        target = [preprocess(os.path.join(args.img_path, img), img_size=args.img_size)
-                  for img in os.listdir(args.img_path)]
+        target = [os.path.join(args.img_path, img) for img in os.listdir(args.img_path)]
     torch.manual_seed(0)
 
     if args.separate:
@@ -64,7 +63,8 @@ if __name__ == '__main__':
     tbar = tqdm(target)
     total_psnr = 0
     total_mse = 0
-    for i, (l, ab, name) in enumerate(tbar, 1):
+    for i, path in enumerate(tbar, 1):
+        (l, ab, name) = preprocess(path, args.img_size)
         torch.manual_seed(443)
         with torch.no_grad():
             l = torch.tensor(l).to(device)
@@ -79,7 +79,8 @@ if __name__ == '__main__':
                 mse, psnr = get_metrics(img_pred, img_orig)
                 total_psnr += psnr
                 total_mse += mse
-                tbar.set_description(f'Avg. PSNR: {total_psnr/i:.4f}, Avg. MSE: {total_mse/i:.4f}')
+                tbar.set_description(
+                    f'Avg. PSNR: {total_psnr/i:.4f}, Avg. MSE: {total_mse/i:.4f}')
             elif args.separate:
                 import matplotlib.pyplot as plt
                 plt.imsave(os.path.join(args.output_dir,
