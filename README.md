@@ -21,3 +21,8 @@ Please delete the duplicated folder in the zip file before training
 python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode wandb
 ```
 
+### PSNR
+
+|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|
+|:-:|:-:|:-:|:-:|:-:|
+|26.0008|24.6531||||

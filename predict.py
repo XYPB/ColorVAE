@@ -83,7 +83,7 @@ if __name__ == '__main__':
                 total_psnr += psnr
                 total_mse += mse
                 tbar.set_description(
-                    f'Avg. PSNR: {total_psnr/i:.4f}, Avg. MSE: {total_mse/i:.4f}')
+                    f'PSNR: {total_psnr/i:.4f}, MSE: {total_mse/i:.4f}')
             elif args.separate:
                 import matplotlib.pyplot as plt
                 plt.imsave(os.path.join(args.output_dir,
