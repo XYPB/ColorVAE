@@ -139,8 +139,8 @@ class VAE(Distribution):
         c_feat = self.encoder.net.get_feat(raw)
         z_mean = self.encoder.mean(context=c_feat)
         l_feat = self.decoder.net.get_feat(l)
-        res = self.decoder.sample(context=(z_mean, l_feat))
-        return res
+        x_ = self.decoder.sample(context=(z_mean, l_feat))
+        return x_
 
 
 def get_model(pretrained_backbone=True, vae=True, rej=True, latent_size=2) -> VAE:

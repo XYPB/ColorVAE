@@ -25,4 +25,10 @@ python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode wand
 
 |ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|
 |:-:|:-:|:-:|:-:|:-:|
-|26.0008|24.6531||||
+|26.0008|24.6531|||21.5979|
+
+### Rating
+
+|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|
+|:-:|:-:|:-:|:-:|:-:|
+||||||
