@@ -134,6 +134,14 @@ class VAE(Distribution):
         x = self.decoder.sample(context=(z, l_feat))
         return x
 
+    def sample_with_hint(self, x, l):
+        raw = torch.cat([l, x], 1)
+        c_feat = self.encoder.net.get_feat(raw)
+        z_mean = self.encoder.mean(context=c_feat)
+        l_feat = self.decoder.net.get_feat(l)
+        res = self.decoder.sample(context=(z_mean, l_feat))
+        return res
+
 
 def get_model(pretrained_backbone=True, vae=True, rej=True, latent_size=2) -> VAE:
     prior = StandardNormal((latent_size,))

@@ -11,7 +11,7 @@ def get_metrics(y_pred, y_true):
     N, H, W, _ = y_pred.shape
     mse = torch.tensor([F.mse_loss(torch.tensor(y_pred[i]), torch.tensor(y_true[0])) for i in range(N)])
     psnr = 10 * torch.log10(1. / mse)
-    return mse.mean(), psnr.mean()
+    return mse.max(), psnr.max()
 
 def multiple_sampling(model, l, device='cuda', sample_size=5):
     torch.manual_seed(444)
