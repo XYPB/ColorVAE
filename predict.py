@@ -61,8 +61,8 @@ if __name__ == '__main__':
     #############
     model.eval()
 
-    l, _, _ = preprocess('samples/par37351-teaser-story-big.jpg', args.img_size)    
-    multiple_sampling(model, torch.tensor(l).to(device))
+    # l, _, _ = preprocess('samples/par45591-teaser-story-big.jpg', args.img_size) 
+    # multiple_sampling(model, torch.tensor(l).to(device))
 
     tbar = tqdm(target)
     total_psnr = 0

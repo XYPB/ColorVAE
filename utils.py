@@ -13,7 +13,7 @@ def get_metrics(y_pred, y_true):
     psnr = 10 * torch.log10(1. / mse)
     return mse.mean(), psnr.mean()
 
-def multiple_sampling(model, l, device='cuda', sample_size=4):
+def multiple_sampling(model, l, device='cuda', sample_size=5):
     torch.manual_seed(444)
     with torch.no_grad():
         lab = torch.cat([l, model.sample(l)], 1)
