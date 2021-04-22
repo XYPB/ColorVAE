@@ -12,7 +12,7 @@ from survae.distributions import DataParallelDistribution
 from data import get_data_loaders, reconstruct, save_plt_img, preprocess, save_pred
 from model import get_model
 from schedular import LinearWarmupScheduler
-from utils import get_metrics
+from utils import get_metrics multiple_sampling
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--img_path', type=str, default='')
