@@ -12,7 +12,7 @@ from survae.distributions import DataParallelDistribution
 from data import get_data_loaders, reconstruct, save_plt_img, preprocess, save_pred
 from model import get_model
 from schedular import LinearWarmupScheduler
-from utils import get_metrics multiple_sampling
+from utils import get_metrics, multiple_sampling
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--img_path', type=str, default='')
@@ -60,12 +60,16 @@ if __name__ == '__main__':
     ## predict ##
     #############
     model.eval()
+
+    l, _, _ = preprocess('samples/par37351-teaser-story-big.jpg', args.img_size)    
+    multiple_sampling(model, torch.tensor(l).to(device))
+
     tbar = tqdm(target)
     total_psnr = 0
     total_mse = 0
     for i, path in enumerate(tbar, 1):
         (l, ab, name) = preprocess(path, args.img_size)
-        torch.manual_seed(443)
+        torch.manual_seed(442)
         with torch.no_grad():
             l = torch.tensor(l).to(device)
             ab = torch.tensor(ab).to(device)
@@ -89,5 +93,4 @@ if __name__ == '__main__':
                     plt.imsave(os.path.join(args.output_dir,
                                             f'sample{i}', name), sample)
             else:
-                save_pred(img_orig, img_pred, os.path.join(
-                    args.output_dir, 'sample.png'))
+                save_pred(img_orig, img_pred, 'sample.png')

@@ -92,11 +92,12 @@ def reconstruct(imgs: torch.Tensor) -> np.ndarray:
 def save_plt_img(imgs, title=None, n_rows=8):
     from IPython.display import Image as kaggleImage
     from IPython.display import display
+    import matplotlib.pyplot as plt
     # img should of shape NxHxWx3;
     N,H,W,_ = imgs.shape
 
     rows = []
-    for i in range(N / n_rows):
+    for i in range(int(N / n_rows)):
         rows.append(imgs[i*n_rows:i*n_rows+n_rows].reshape(-1, W, 3))
     img = np.concatenate(rows, 1)
     if title is not None: print(title)
