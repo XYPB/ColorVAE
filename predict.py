@@ -24,6 +24,8 @@ parser.add_argument('--latent_size', type=int, default=2)
 parser.add_argument('--separate', action="store_true")
 parser.add_argument('--ab_hint', action="store_true")
 parser.add_argument('--sample_best', action="store_true")
+parser.add_argument('--single', action="store_true")
+
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -97,5 +99,5 @@ if __name__ == '__main__':
                 else:
                     for j, sample in enumerate(img_pred, 0):
                         plt.imsave(os.path.join(args.output_dir, f'sample{j}', name), sample)
-            else:
+            elif args.single:
                 save_pred(img_orig, img_pred, 'sample.png')
