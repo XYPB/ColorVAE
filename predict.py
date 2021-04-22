@@ -33,6 +33,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if os.path.isfile(args.img_path):
         target = [args.img_path]
+        l, _, _ = preprocess(target[0], args.img_size) 
+        multiple_sampling(model, torch.tensor(l).to(device))
     elif os.path.isdir(args.img_path):
         target = [os.path.join(args.img_path, img) for img in os.listdir(args.img_path)]
     torch.manual_seed(0)
@@ -60,9 +62,6 @@ if __name__ == '__main__':
     ## predict ##
     #############
     model.eval()
-
-    l, _, _ = preprocess('torate/000000044279.jpg', args.img_size) 
-    multiple_sampling(model, torch.tensor(l).to(device))
 
     tbar = tqdm(target)
     total_psnr = 0
