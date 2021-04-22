@@ -19,3 +19,5 @@ siggraph
 samples/
 no_pret/
 vae_high_psnr/
+vae_hint/
+vae/
