@@ -23,12 +23,12 @@ python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode wand
 
 ### PSNR
 
-|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|
-|:-:|:-:|:-:|:-:|:-:|
-|26.0008|24.6531|||21.5979|
+|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|w/ VAE hint|
+|:-:|:-:|:-:|:-:|:-:|:-:|
+|26.0008|24.6531|21.9863|25.6168|21.5979|27.0091|
 
 ### Rating
 
-|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|
-|:-:|:-:|:-:|:-:|:-:|
-||||||
+|Non-VAE|ECCV16|SIGGRAPH17|w/ VAE hint|
+|:-:|:-:|:-:|:-:|
+|||||
