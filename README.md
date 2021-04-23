@@ -31,4 +31,4 @@ python main.py --using_vae --img_size 64 --dataset tinyImgNetZip --vis_mode wand
 
 |Non-VAE|ECCV16|SIGGRAPH17|w/ VAE hint|
 |:-:|:-:|:-:|:-:|
-|||||
+|3.555|3.188|3.546|3.691|
