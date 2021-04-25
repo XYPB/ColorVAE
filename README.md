@@ -1,6 +1,7 @@
 # Color VAE
 
-![img](im.jpg)
+![sample](im.jpg)
+![ColorVAE](colorvae.png)
 
 ### Environment setup 
 
