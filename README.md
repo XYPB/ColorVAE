@@ -1,4 +1,4 @@
-# Color VAE
+# EECS442 21WN Course Project: Color-VAE
 
 ![sample](im.jpg)
 ![ColorVAE](colorvae.png)
