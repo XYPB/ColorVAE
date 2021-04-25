@@ -57,20 +57,6 @@ def log_img(model, args, wandb, writer):
         else:
             save_plt_img(img, title='sample')
 
-# class ARGS:
-#     def __init__(self):
-#         self.batch_size = 64
-#         self.img_size = 64
-#         self.num_epoch = 64
-#         self.lr = 0.01
-#         self.vae = True
-#         self.rej = True
-#         self.vis_mode = 'wandb'
-#         self.dataset = 'tinyImgNetZip'
-#         self.param_path = 'models/'
-#         self.exp_name = 'vae'
-#         self.adam = False
-
 log_iters = [25, 50, 100, 200, 400, 800, 1600]
 
 if __name__=='__main__':
@@ -124,7 +110,6 @@ if __name__=='__main__':
     for epoch in range(args.num_epoch):
         cum_loss = 0.0
         pbar = tqdm(tr_loader)
-        # model.train()
         for i, (l, ab) in enumerate(pbar):
             l = l.to(device)
             ab = ab.to(device)
@@ -148,7 +133,6 @@ if __name__=='__main__':
                 log_img(model, args, wandb, writer)
             gIter += 1
 
-        # model.eval()
         with torch.no_grad():
             cum_loss = 0.0
             pbar = tqdm(va_loader)
