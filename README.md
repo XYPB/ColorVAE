@@ -1,4 +1,6 @@
-# EECS442 21WN Course Project: Color-VAE
+# EECS442 21WN Final Project: Color-VAE
+
+[[Report](https://drive.google.com/file/d/1NyOGlJl9AJlpn2WZPQXuo36-uacNff3Y/view?usp=sharing)] [[Demo Video](https://drive.google.com/file/d/1HQzCaNgMwJ8CPR0Vxa9Zt1a_jjqoBpHX/view?usp=sharing)] [[Slides](https://drive.google.com/file/d/17ZwhIHDBg-7hrmmk2IcL31XXydxS_Oub/view?usp=sharing)]
 
 ![sample](im.jpg)
 ![ColorVAE](colorvae.png)
@@ -53,15 +55,18 @@ python predict.py --img_size 256 --resume models/dil256-vae_model.pt --img_path 
 python predict.py --img_size 256 --resume models/dil256-vae_model.pt --img_path coco/val2017 --sample_num 8 --psnr
 ```
 
+## Performance
+
+On COCO val2017 dataset
 
 ### PSNR
 
-|ColorVAE|Non-VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|w/ VAE hint|
+|ColorVAE|No VAE|ECCV16|SIGGRAPH17|w/o semantic pre-train|w/ VAE hint|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |26.0008|24.6531|21.9863|25.6168|21.5979|27.0091|
 
 ### Rating
 
-|Non-VAE|ECCV16|SIGGRAPH17|w/ VAE hint|
+|No VAE|ECCV16|SIGGRAPH17|w/ VAE hint|
 |:-:|:-:|:-:|:-:|
 |3.555|3.188|3.546|3.691|
